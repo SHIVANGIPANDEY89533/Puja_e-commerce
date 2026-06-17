@@ -1,0 +1,136 @@
+.role-switcher-container {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 9999;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 12px;
+}
+
+.role-switcher-fab {
+  border-radius: 50px;
+  box-shadow: 0 8px 32px rgba(242, 126, 26, 0.35);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  transition: all var(--transition-normal);
+}
+
+.role-switcher-fab:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 36px rgba(242, 126, 26, 0.45);
+}
+
+.role-switcher-menu {
+  width: 320px;
+  padding: 16px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  border: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.menu-header h4 {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+  text-align: left;
+}
+
+.menu-header p {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+  text-align: left;
+}
+
+.role-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.role-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-color);
+  background-color: var(--bg-card);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  text-align: left;
+  color: var(--text-primary);
+}
+
+.role-btn:hover {
+  background-color: var(--bg-card-hover);
+  border-color: var(--color-primary);
+  transform: translateX(-2px);
+}
+
+.role-btn.active {
+  background-color: rgba(242, 126, 26, 0.08);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(242, 126, 26, 0.15);
+}
+
+.role-icon {
+  color: var(--text-secondary);
+  transition: color var(--transition-fast);
+}
+
+.role-btn.active .role-icon {
+  color: var(--color-primary);
+}
+
+.role-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.role-label {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.role-desc {
+  font-size: 0.75rem;
+  color: var(--text-secondary);
+}
+
+.menu-footer {
+  border-top: 1px solid var(--border-color);
+  padding-top: 12px;
+  display: flex;
+  justify-content: center;
+}
+
+.theme-toggle-btn {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.8125rem;
+}
+
+@media (max-width: 600px) {
+  .role-switcher-container {
+    bottom: 16px;
+    right: 16px;
+  }
+  .role-switcher-menu {
+    width: calc(100vw - 32px);
+  }
+  .fab-text {
+    display: none;
+  }
+}
