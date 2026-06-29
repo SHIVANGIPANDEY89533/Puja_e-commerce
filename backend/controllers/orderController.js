@@ -1,5 +1,6 @@
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
+import Cart from '../models/Cart.js';
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -34,6 +35,13 @@ const addOrderItems = async (req, res) => {
         product.stock = Math.max(0, product.stock - item.qty);
         await product.save();
       }
+    }
+
+    // Clear the user's cart after successful order
+    let cart = await Cart.findOne({ user: req.user._id });
+    if (cart) {
+      cart.items = [];
+      await cart.save();
     }
 
     res.status(201).json(createdOrder);
@@ -146,6 +154,29 @@ const updateDeliveryStatus = async (req, res) => {
   }
 };
 
+// @desc    Update order status directly (Admin only)
+// @route   PUT /api/orders/:id/status
+// @access  Private/Admin
+const updateOrderStatusAdmin = async (req, res) => {
+  const { status, paymentStatus } = req.body;
+
+  try {
+    const order = await Order.findById(req.params.id);
+
+    if (order) {
+      if (status) order.status = status;
+      if (paymentStatus) order.paymentStatus = paymentStatus;
+
+      const updatedOrder = await order.save();
+      res.json(updatedOrder);
+    } else {
+      res.status(404).json({ message: 'Order not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
 export {
   addOrderItems,
   getOrderById,
@@ -153,5 +184,6 @@ export {
   getOrders,
   assignOrderDelivery,
   getDeliveryAssignedOrders,
-  updateDeliveryStatus
+  updateDeliveryStatus,
+  updateOrderStatusAdmin
 };

@@ -2,6 +2,8 @@ import express from 'express';
 import { 
   getProducts, 
   getProductById, 
+  getProductCategories,
+  getSimilarProducts,
   addProduct, 
   updateProduct, 
   deleteProduct,
@@ -20,6 +22,12 @@ router.route('/')
 // Bulk upload route (must be before :id to prevent mapping conflict)
 router.route('/bulk')
   .post(protect, admin, bulkUploadProducts);
+
+router.route('/categories')
+  .get(getProductCategories);
+
+router.route('/:id/similar')
+  .get(getSimilarProducts);
 
 router.route('/:id')
   .get(getProductById)

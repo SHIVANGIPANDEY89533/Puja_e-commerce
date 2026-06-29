@@ -1,4 +1,5 @@
 import Product from '../models/Product.js';
+import Category from '../models/Category.js';
 
 // @desc    Fetch all products with optional filters
 // @route   GET /api/products
@@ -14,7 +15,15 @@ const getProducts = async (req, res) => {
       price: { $gte: Number(minPrice), $lte: Number(maxPrice) }
     };
 
-    if (category) {
+    if (req.query.categoryId) {
+      const categoryDoc = await Category.findById(req.query.categoryId);
+      if (categoryDoc) {
+        filter.category = categoryDoc.name;
+      } else {
+        // If invalid categoryId, return empty result or match nothing
+        filter.category = '__INVALID_CATEGORY__';
+      }
+    } else if (category) {
       filter.category = category;
     }
 
@@ -25,7 +34,24 @@ const getProducts = async (req, res) => {
       ];
     }
 
-    const products = await Product.find(filter);
+    let query = Product.find(filter);
+
+    // Sorting logic
+    const sort = req.query.sort;
+    if (sort === 'price_asc') {
+      query = query.sort({ price: 1 });
+    } else if (sort === 'price_desc') {
+      query = query.sort({ price: -1 });
+    } else if (sort === 'rating') {
+      query = query.sort({ rating: -1 });
+    } else if (sort === 'newest') {
+      query = query.sort({ createdAt: -1 });
+    } else {
+      // Popularity (defaulting to rating + stock heuristic or just default)
+      query = query.sort({ rating: -1, createdAt: -1 });
+    }
+
+    const products = await query;
     res.json(products);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -44,6 +70,49 @@ const getProductById = async (req, res) => {
     } else {
       res.status(404).json({ message: 'Product not found' });
     }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Fetch distinct product categories
+// @route   GET /api/products/categories
+// @access  Public
+const getProductCategories = async (req, res) => {
+  try {
+    const categories = await Product.distinct('category');
+    res.json(categories);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Fetch similar products
+// @route   GET /api/products/:id/similar
+// @access  Public
+const getSimilarProducts = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id);
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    let filter = {
+      _id: { $ne: product._id }
+    };
+
+    if (req.query.categoryId) {
+      const categoryDoc = await Category.findById(req.query.categoryId);
+      if (categoryDoc) {
+        filter.category = categoryDoc.name;
+      }
+    } else {
+      filter.category = product.category;
+    }
+
+    const similar = await Product.find(filter).limit(6);
+
+    res.json(similar);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
@@ -166,7 +235,9 @@ const bulkUploadProducts = async (req, res) => {
   }
 
   try {
-    const formattedProducts = products.map((prod) => {
+    const formattedProducts = products
+      .filter(prod => prod && prod.name) // Filter out empty lines or invalid rows
+      .map((prod) => {
       return {
         name: prod.name,
         category: prod.category || 'Other',
@@ -179,6 +250,10 @@ const bulkUploadProducts = async (req, res) => {
         rating: Number(prod.rating) || 5.0
       };
     });
+
+    if (formattedProducts.length === 0) {
+      return res.status(400).json({ message: 'No valid products found in the file. Ensure the "name" column exists.' });
+    }
 
     const createdProducts = await Product.insertMany(formattedProducts);
     res.status(201).json({
@@ -193,6 +268,8 @@ const bulkUploadProducts = async (req, res) => {
 export {
   getProducts,
   getProductById,
+  getProductCategories,
+  getSimilarProducts,
   addProduct,
   updateProduct,
   deleteProduct,

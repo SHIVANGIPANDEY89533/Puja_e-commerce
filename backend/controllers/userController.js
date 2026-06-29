@@ -1,6 +1,5 @@
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
-import Query from '../models/Query.js';
 import generateToken from '../utils/generateToken.js';
 
 // @desc    Register a new user
@@ -135,51 +134,81 @@ const updateUserProfile = async (req, res) => {
   }
 };
 
-// @desc    Submit support query
-// @route   POST /api/users/queries
-// @access  Public
-const submitQuery = async (req, res) => {
-  const { user, email, subject, message } = req.body;
-
+// @desc    Get all users
+// @route   GET /api/users
+// @access  Private/Admin
+const getAllUsers = async (req, res) => {
   try {
-    const query = await Query.create({
-      user,
-      email,
-      subject,
-      message
-    });
-
-    res.status(201).json(query);
+    const users = await User.find({}).select('-password');
+    res.json(users);
   } catch (error) {
     res.status(500).json({ message: error.message });
   }
 };
 
-// @desc    Get support queries
-// @route   GET /api/users/queries
+// @desc    Update user role
+// @route   PUT /api/users/:id/role
 // @access  Private/Admin
-const getQueries = async (req, res) => {
+const updateUserRole = async (req, res) => {
   try {
-    const queriesList = await Query.find({}).sort({ createdAt: -1 });
-    res.json(queriesList);
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
-
-// @desc    Resolve support query
-// @route   PUT /api/users/queries/:id
-// @access  Private/Admin
-const resolveQueryTicket = async (req, res) => {
-  try {
-    const query = await Query.findById(req.params.id);
-
-    if (query) {
-      query.status = 'Resolved';
-      const updatedQuery = await query.save();
-      res.json(updatedQuery);
+    const user = await User.findById(req.params.id);
+    if (user) {
+      user.role = req.body.role || user.role;
+      const updatedUser = await user.save();
+      res.json({
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        isActive: updatedUser.isActive
+      });
     } else {
-      res.status(404).json({ message: 'Query ticket not found' });
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Update user status (activate/deactivate)
+// @route   PUT /api/users/:id/status
+// @access  Private/Admin
+const updateUserStatus = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (user) {
+      user.isActive = req.body.isActive !== undefined ? req.body.isActive : user.isActive;
+      const updatedUser = await user.save();
+      res.json({
+        _id: updatedUser._id,
+        name: updatedUser.name,
+        email: updatedUser.email,
+        role: updatedUser.role,
+        isActive: updatedUser.isActive
+      });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
+// @desc    Delete user
+// @route   DELETE /api/users/:id
+// @access  Private/Admin
+const deleteUser = async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (user) {
+      if (user.role === 'admin') {
+        res.status(400).json({ message: 'Cannot delete admin user' });
+        return;
+      }
+      await user.deleteOne();
+      res.json({ message: 'User removed' });
+    } else {
+      res.status(404).json({ message: 'User not found' });
     }
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -191,7 +220,8 @@ export {
   authUser,
   getUserProfile,
   updateUserProfile,
-  submitQuery,
-  getQueries,
-  resolveQueryTicket
+  getAllUsers,
+  updateUserRole,
+  updateUserStatus,
+  deleteUser
 };

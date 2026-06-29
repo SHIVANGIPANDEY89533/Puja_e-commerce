@@ -6,7 +6,8 @@ import {
   getOrders, 
   assignOrderDelivery, 
   getDeliveryAssignedOrders, 
-  updateDeliveryStatus 
+  updateDeliveryStatus,
+  updateOrderStatusAdmin
 } from '../controllers/orderController.js';
 import { protect, admin, delivery } from '../middleware/authMiddleware.js';
 
@@ -34,5 +35,8 @@ router.route('/:id/assign')
 
 router.route('/:id/delivery-status')
   .put(protect, delivery, updateDeliveryStatus);
+
+router.route('/:id/status')
+  .put(protect, admin, updateOrderStatusAdmin);
 
 export default router;
