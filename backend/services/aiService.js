@@ -1,58 +1,119 @@
-/**
- * AI Service Module
- * Designed to be modular so the underlying engine can be swapped
- * from a Rule-Based system to an LLM (e.g., OpenAI, Gemini, Claude) later
- * without changing the frontend implementation.
- */
+import { GoogleGenerativeAI } from '@google/generative-ai';
+import AIChat from '../models/AIChat.js';
+import Order from '../models/Order.js';
+import Ticket from '../models/Ticket.js';
 
-// Rule-based AI Engine
-const generateRuleBasedResponse = (message) => {
-  const lowerMsg = message.toLowerCase();
-
-  if (lowerMsg.includes('order') && (lowerMsg.includes('status') || lowerMsg.includes('where'))) {
-    return "I can help you check your order status. Could you please provide your Order ID? If you're still having trouble, I can create a support ticket for our human support team.";
+// Initialize Gemini API
+const getGeminiInstance = () => {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) {
+    console.error("GEMINI_API_KEY is not defined in .env file.");
+    return null;
   }
-  
-  if (lowerMsg.includes('delivery') || lowerMsg.includes('arrive')) {
-    return "I can help with delivery issues. Deliveries usually take 3-5 business days. Please provide your Order ID to check specifics. If your issue isn't resolved, I can create a support ticket for you.";
-  }
-
-  if (lowerMsg.includes('refund') || lowerMsg.includes('return')) {
-    return "Our return policy allows returns within 7 days of delivery. Refunds are processed within 5-7 business days after we receive the returned item. If you need to initiate a return, I can help you create a support ticket.";
-  }
-  
-  if (lowerMsg.includes('payment') || lowerMsg.includes('charge')) {
-    return "I see you have a question about payments. We accept all major credit cards, UPI, and net banking. If a charge failed but money was deducted, it usually refunds within 48 hours. Should I escalate this to a human agent?";
-  }
-  
-  if (lowerMsg.includes('cancel')) {
-    return "Orders can only be cancelled before they are shipped. If you'd like to request a cancellation, please let me know or create a support ticket with your Order ID.";
-  }
-
-  // Default fallback response
-  return "I'm your AI Assistant. I can help with queries about orders, delivery, payments, or returns. If I can't resolve your issue, I can quickly escalate this by creating a support ticket for our human administrators.";
+  return new GoogleGenerativeAI(apiKey);
 };
 
-/**
- * Public Interface for AI Support Chat
- * @param {string} message The customer's message
- * @returns {string} The AI's response
- */
-export const getAIResponse = async (message) => {
-  try {
-    // In the future, this is where you would call:
-    // const response = await openai.chat.completions.create({...})
-    // return response.choices[0].message.content;
+// Define standard business context
+const STORE_CONTEXT = `
+You are the official AI Support Assistant for the "Puja Samagri" E-commerce store.
+Your goal is to help customers with their queries, provide product recommendations, check order statuses, and handle return/refund inquiries.
+Always be polite, culturally respectful (use 'Namaste' occasionally), and concise.
 
-    // For Phase 1, we use the rule-based engine:
-    const response = generateRuleBasedResponse(message);
+Store Policies & Facts:
+- Store Name: Puja Samagri
+- Deliveries usually take 3-5 business days.
+- Return Policy: 7 days from delivery.
+- Refund Policy: Processed within 5-7 business days after receiving the returned item.
+- Payments: We accept all major credit cards, UPI, and net banking.
+- Cancellations: Only allowed before the order is shipped.
+
+CRITICAL RULES:
+1. Do NOT hallucinate order statuses or details. Only use the customer data provided in the context below.
+2. If the user asks something you cannot answer based on the provided context, or if they are frustrated, gently offer to create a Support Ticket for them (e.g. "I can quickly escalate this by creating a support ticket for our human administrators.").
+3. Never expose the raw JSON data formatting to the user. Read it and answer naturally.
+`;
+
+export const getAIResponse = async (sessionId, user, message) => {
+  try {
+    const genAI = getGeminiInstance();
     
-    // Simulate slight network delay to feel like an AI processing
-    await new Promise(resolve => setTimeout(resolve, 800));
+    // If no API key is provided, gracefully fallback to a simple rule-based response temporarily
+    // (This helps avoid crashes before the user sets up the key)
+    if (!genAI) {
+      return "I'm sorry, my AI processing engine (Gemini) is currently not configured by the administrator. Please create a support ticket for further assistance.";
+    }
+
+    const model = genAI.getGenerativeModel({ model: "gemini-2.5-flash" });
+
+    // 1. Retrieve or Create AIChat Session
+    let chatSession = await AIChat.findOne({ sessionId, user: user._id });
+    if (!chatSession) {
+      chatSession = new AIChat({
+        sessionId,
+        user: user._id,
+        messages: []
+      });
+    }
+
+    // 2. Fetch User Context Data (Recent Orders & Tickets)
+    // We only fetch recent ones to avoid token limits
+    const recentOrders = await Order.find({ user: user._id }).sort({ createdAt: -1 }).limit(3).lean();
+    const recentTickets = await Ticket.find({ user: user._id }).sort({ createdAt: -1 }).limit(3).lean();
+
+    const customerContext = `
+Customer Profile:
+- Name: ${user.name}
+- Email: ${user.email}
+
+Recent Orders (JSON):
+${JSON.stringify(recentOrders, null, 2)}
+
+Recent Support Tickets (JSON):
+${JSON.stringify(recentTickets, null, 2)}
+`;
+
+    // 3. Assemble Chat History for Gemini API
+    // Gemini expects history in the format: { role: "user" | "model", parts: [{ text: "..." }] }
+    const history = [
+      // Inject System Prompt & Context as the first User message (since Gemini standard API doesn't support systemInstruction in older simple SDK calls, we inject it in history or use systemInstruction if available)
+      {
+        role: "user",
+        parts: [{ text: STORE_CONTEXT + "\n\n" + customerContext + "\n\nHello, I am the customer. Please acknowledge these instructions." }]
+      },
+      {
+        role: "model",
+        parts: [{ text: "Namaste! I have received your profile and store instructions. How can I assist you today?" }]
+      }
+    ];
+
+    // Append previous DB messages
+    chatSession.messages.forEach(msg => {
+      history.push({
+        role: msg.sender === 'User' ? 'user' : 'model',
+        parts: [{ text: msg.message }]
+      });
+    });
+
+    // 4. Start Chat and Send Message
+    const chat = model.startChat({ history });
+    const result = await chat.sendMessage(message);
+    const aiReply = result.response.text();
+
+    // 5. Save to MongoDB
+    chatSession.messages.push({ sender: 'User', message });
+    chatSession.messages.push({ sender: 'AI', message: aiReply });
     
-    return response;
+    // Auto-generate title on first user message if it's new
+    if (chatSession.messages.length === 2 && chatSession.title === 'Support Conversation') {
+      chatSession.title = message.substring(0, 30) + "...";
+    }
+
+    await chatSession.save();
+
+    return aiReply;
+
   } catch (error) {
     console.error("AI Service Error:", error);
-    return "I'm having trouble processing your request right now. Please create a support ticket to get help from our team.";
+    return "I'm sorry, I'm having trouble connecting to my brain right now. Please try again or create a support ticket.";
   }
 };

@@ -9,14 +9,14 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function CreateTicketScreen() {
   const router = useRouter();
-  const { context } = useLocalSearchParams<{ context: string }>();
+  const { aiSessionId } = useLocalSearchParams<{ aiSessionId: string }>();
   
   const { scheme } = useTheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
 
-  const [subject, setSubject] = useState('');
+  const [subject, setSubject] = useState(aiSessionId ? 'Escalated from AI Support' : '');
   const [category, setCategory] = useState('General Inquiry');
-  const [description, setDescription] = useState('');
+  const [description, setDescription] = useState(aiSessionId ? 'I am escalating this issue from my AI chat session.' : '');
   const [priority, setPriority] = useState<'Low' | 'Medium' | 'High' | 'Urgent'>('Medium');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -25,19 +25,6 @@ export default function CreateTicketScreen() {
     'Product Issue', 'Account Issue', 'Delivery Issue', 
     'Technical Problem', 'General Inquiry'
   ];
-
-  useEffect(() => {
-    if (context) {
-      setDescription(`[AI Conversation History]\n${context}\n\n[Additional Details]\n`);
-      
-      // Basic auto-categorization
-      const lowerContext = context.toLowerCase();
-      if (lowerContext.includes('order')) setCategory('Order Issue');
-      else if (lowerContext.includes('delivery')) setCategory('Delivery Issue');
-      else if (lowerContext.includes('refund')) setCategory('Refund');
-      else if (lowerContext.includes('payment')) setCategory('Payment Issue');
-    }
-  }, [context]);
 
   const handleSubmit = async () => {
     if (!subject.trim() || !description.trim()) {
@@ -51,13 +38,19 @@ export default function CreateTicketScreen() {
         { senderType: 'Customer', message: description }
       ];
 
-      await ticketService.createTicket({
+      const ticketData: Partial<any> = {
         subject,
         category,
         description,
         priority,
         messages: initialMessages
-      });
+      };
+
+      if (aiSessionId) {
+        ticketData.aiSessionId = aiSessionId;
+      }
+
+      await ticketService.createTicket(ticketData);
 
       alert('Ticket created successfully!');
       router.replace('/support/my-tickets');

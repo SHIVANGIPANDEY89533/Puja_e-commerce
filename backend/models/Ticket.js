@@ -74,6 +74,10 @@ const ticketSchema = mongoose.Schema(
       ref: 'User',
       required: false
     },
+    aiSessionId: {
+      type: String,
+      required: false
+    },
     messages: [messageSchema]
   },
   {

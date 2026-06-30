@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, KeyboardAvoidingView, Platform, ActivityIndicator } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
@@ -19,11 +19,33 @@ export default function AIChatScreen() {
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const scrollViewRef = useRef<ScrollView>(null);
 
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    { id: 'welcome', sender: 'AI', text: 'Hi! I am your AI Support Assistant. How can I help you today?' }
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [inputText, setInputText] = useState('');
   const [isTyping, setIsTyping] = useState(false);
+  const sessionId = 'main-session';
+
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  const fetchHistory = async () => {
+    try {
+      const history = await ticketService.getAIChatHistory(sessionId);
+      if (history && history.messages && history.messages.length > 0) {
+        const mapped = history.messages.map((m: any) => ({
+          id: m._id || Math.random().toString(),
+          sender: m.sender,
+          text: m.message
+        }));
+        setMessages(mapped);
+      } else {
+        setMessages([{ id: 'welcome', sender: 'AI', text: 'Hi! I am your AI Support Assistant. How can I help you today?' }]);
+      }
+      setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: false }), 100);
+    } catch (error) {
+      setMessages([{ id: 'welcome', sender: 'AI', text: 'Hi! I am your AI Support Assistant. How can I help you today?' }]);
+    }
+  };
 
   const sendMessage = async () => {
     if (!inputText.trim()) return;
@@ -37,7 +59,7 @@ export default function AIChatScreen() {
     setTimeout(() => scrollViewRef.current?.scrollToEnd({ animated: true }), 100);
 
     try {
-      const response = await ticketService.chatWithAI(userMsg.text);
+      const response = await ticketService.chatWithAI(userMsg.text, sessionId);
       const aiMsg: ChatMessage = { id: (Date.now() + 1).toString(), sender: 'AI', text: response.reply };
       setMessages(prev => [...prev, aiMsg]);
     } catch (error) {
@@ -50,11 +72,10 @@ export default function AIChatScreen() {
   };
 
   const escalateToTicket = () => {
-    // Pass the entire conversation context to pre-fill the ticket
-    const contextStr = messages.map(m => `${m.sender}: ${m.text}`).join('\n\n');
+    // Pass the sessionId to link the conversation
     router.push({
       pathname: '/support/create',
-      params: { context: contextStr }
+      params: { aiSessionId: sessionId }
     });
   };
 

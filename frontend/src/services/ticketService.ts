@@ -26,15 +26,21 @@ export interface Ticket {
   status: 'Open' | 'In Progress' | 'Waiting for Customer' | 'Resolved' | 'Closed';
   attachments: string[];
   assignedAdmin?: string;
+  aiSessionId?: string;
+  aiChatHistory?: { sender: string; message: string; createdAt?: string }[];
   messages: TicketMessage[];
   createdAt: string;
   updatedAt: string;
 }
 
 export const ticketService = {
-  chatWithAI: async (message: string): Promise<{ reply: string }> => {
-    // This is public, no token required
-    const response = await api.post('/tickets/ai-chat', { message });
+  chatWithAI: async (message: string, sessionId: string): Promise<{ reply: string }> => {
+    const response = await api.post('/tickets/ai-chat', { message, sessionId });
+    return response.data;
+  },
+
+  getAIChatHistory: async (sessionId: string): Promise<any> => {
+    const response = await api.get(`/tickets/ai-chat/${sessionId}`);
     return response.data;
   },
 

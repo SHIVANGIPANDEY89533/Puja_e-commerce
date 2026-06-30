@@ -3,25 +3,39 @@ import Ticket from '../models/Ticket.js';
 import Notification from '../models/Notification.js';
 import { getAIResponse } from '../services/aiService.js';
 
+import AIChat from '../models/AIChat.js';
+
 // @desc    Simulate AI Chat
 // @route   POST /api/tickets/ai-chat
-// @access  Public
+// @access  Private
 const chatWithAI = asyncHandler(async (req, res) => {
-  const { message } = req.body;
-  if (!message) {
+  const { message, sessionId } = req.body;
+  if (!message || !sessionId) {
     res.status(400);
-    throw new Error('Message is required');
+    throw new Error('Message and sessionId are required');
   }
 
-  const aiResponse = await getAIResponse(message);
+  const aiResponse = await getAIResponse(sessionId, req.user, message);
   res.json({ reply: aiResponse });
+});
+
+// @desc    Get AI Chat History
+// @route   GET /api/tickets/ai-chat/:sessionId
+// @access  Private
+const getAIChatHistory = asyncHandler(async (req, res) => {
+  const chatSession = await AIChat.findOne({ sessionId: req.params.sessionId, user: req.user._id });
+  if (chatSession) {
+    res.json(chatSession);
+  } else {
+    res.json({ messages: [] });
+  }
 });
 
 // @desc    Create a new support ticket
 // @route   POST /api/tickets
 // @access  Private
 const createTicket = asyncHandler(async (req, res) => {
-  const { subject, category, description, priority, attachments, initialMessages } = req.body;
+  const { subject, category, description, priority, attachments, initialMessages, aiSessionId } = req.body;
 
   const ticket = await Ticket.create({
     user: req.user._id,
@@ -31,7 +45,8 @@ const createTicket = asyncHandler(async (req, res) => {
     priority: priority || 'Medium',
     status: 'Open',
     attachments: attachments || [],
-    messages: initialMessages || []
+    messages: initialMessages || [],
+    aiSessionId
   });
 
   // Create notification for admin (simulated by assigning to generic 'admin' logic or just generic string in this simplified notification table)
@@ -77,7 +92,8 @@ const getAllTickets = asyncHandler(async (req, res) => {
 const getTicketById = asyncHandler(async (req, res) => {
   const ticket = await Ticket.findById(req.params.id)
     .populate('user', 'name email')
-    .populate('messages.senderId', 'name role');
+    .populate('messages.senderId', 'name role')
+    .lean();
 
   if (!ticket) {
     res.status(404);
@@ -88,6 +104,14 @@ const getTicketById = asyncHandler(async (req, res) => {
   if (ticket.user._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
     res.status(403);
     throw new Error('Not authorized to view this ticket');
+  }
+
+  // If ticket has an AI session, fetch it to display to admins (or even the user)
+  if (ticket.aiSessionId) {
+    const aiChat = await AIChat.findOne({ sessionId: ticket.aiSessionId }).lean();
+    if (aiChat) {
+      ticket.aiChatHistory = aiChat.messages;
+    }
   }
 
   res.json(ticket);
@@ -174,6 +198,7 @@ const updateTicketStatus = asyncHandler(async (req, res) => {
 
 export {
   chatWithAI,
+  getAIChatHistory,
   createTicket,
   getMyTickets,
   getAllTickets,

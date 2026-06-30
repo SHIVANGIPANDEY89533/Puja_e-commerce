@@ -131,6 +131,41 @@ export default function AdminTicketDetailsScreen() {
           style={styles.chatArea}
           contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
         >
+          {ticket.aiChatHistory && ticket.aiChatHistory.length > 0 && (
+            <View style={{ marginBottom: 24 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12, opacity: 0.7 }}>
+                <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+                <Text style={{ marginHorizontal: 8, fontSize: 12, color: colors.textSecondary }}>Previous AI Conversation</Text>
+                <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+              </View>
+
+              {ticket.aiChatHistory.map((msg, index) => {
+                const isUser = msg.sender === 'User';
+                return (
+                  <View key={`ai-${index}`} style={[styles.messageWrapper, !isUser ? styles.userWrapper : styles.adminWrapper]}>
+                    {!isUser && (
+                      <View style={[styles.avatar, { backgroundColor: '#9B59B6' }]}>
+                        <Ionicons name="hardware-chip" size={14} color="#fff" />
+                      </View>
+                    )}
+                    <View style={[
+                      styles.messageBubble, 
+                      isUser ? { backgroundColor: colors.backgroundElement, borderWidth: 1, borderColor: colors.border } : { backgroundColor: 'rgba(155, 89, 182, 0.1)', borderWidth: 1, borderColor: '#9B59B6' }
+                    ]}>
+                      <Text style={[styles.messageText, { color: colors.text }]}>{msg.message}</Text>
+                    </View>
+                  </View>
+                );
+              })}
+
+              <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 12, marginBottom: 24, opacity: 0.7 }}>
+                <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+                <Text style={{ marginHorizontal: 8, fontSize: 12, color: colors.textSecondary }}>Ticket Escalated Here</Text>
+                <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+              </View>
+            </View>
+          )}
+
           {ticket.messages.map((msg, index) => {
             const isAdmin = msg.senderType === 'Admin';
             const isAI = msg.senderType === 'AI';
