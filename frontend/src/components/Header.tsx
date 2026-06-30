@@ -4,15 +4,30 @@ import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/context/ThemeContext';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'expo-router';
+import { useRouter, usePathname } from 'expo-router';
 import { useCart } from '@/context/CartContext';
+import { addressService, Address } from '@/services/addressService';
 
 export default function Header() {
   const { scheme, toggleTheme } = useTheme();
   const { user } = useAuth();
   const { cartCount } = useCart();
   const router = useRouter();
+  const pathname = usePathname();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+
+  const [defaultAddress, setDefaultAddress] = React.useState<Address | null>(null);
+
+  React.useEffect(() => {
+    if (user) {
+      addressService.getMyAddresses().then(addrs => {
+        const def = addrs.find(a => a.isDefault) || addrs[0];
+        setDefaultAddress(def || null);
+      }).catch(err => console.log('Header address err', err));
+    } else {
+      setDefaultAddress(null);
+    }
+  }, [user, pathname]); // Re-fetch when route changes (e.g. back from adding an address)
 
   return (
     <View style={[styles.container, { backgroundColor: colors.backgroundElement }]}>
@@ -21,7 +36,9 @@ export default function Header() {
           <Ionicons name="location-sharp" size={20} color={colors.primary} />
           <View style={styles.textContainer}>
             <Text style={[styles.deliverTo, { color: colors.textSecondary }]}>Deliver to</Text>
-            <Text style={[styles.address, { color: colors.text }]} numberOfLines={1}>Mumbai 400001</Text>
+            <Text style={[styles.address, { color: colors.text }]} numberOfLines={1}>
+              {defaultAddress ? `${defaultAddress.city} ${defaultAddress.pincode}` : 'Select Address'}
+            </Text>
           </View>
           <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
         </View>

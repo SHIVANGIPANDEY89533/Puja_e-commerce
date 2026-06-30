@@ -119,6 +119,14 @@ export default function AdminLayout() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
+  React.useEffect(() => {
+    if (user && user.role !== 'admin') {
+      router.replace('/');
+    }
+  }, [user]);
+
+  if (!user || user.role !== 'admin') return null;
+
   const isDesktop = width >= 768;
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 

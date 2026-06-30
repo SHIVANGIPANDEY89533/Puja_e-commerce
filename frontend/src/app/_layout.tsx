@@ -81,6 +81,7 @@ function TabNavigator() {
         <Tabs.Screen name="signup" options={{ href: null }} />
         
         {/* Hidden internal routes */}
+        <Tabs.Screen name="my-orders/index" options={{ href: null }} />
         <Tabs.Screen name="product/[id]" options={{ href: null }} />
         <Tabs.Screen name="checkout" options={{ href: null }} />
         <Tabs.Screen name="notifications" options={{ href: null }} />
@@ -89,6 +90,11 @@ function TabNavigator() {
         <Tabs.Screen name="support/ai-chat" options={{ href: null }} />
         <Tabs.Screen name="support/my-tickets" options={{ href: null }} />
         <Tabs.Screen name="support/[id]" options={{ href: null }} />
+        <Tabs.Screen name="my-orders/[id]" options={{ href: null }} />
+        <Tabs.Screen name="addresses/index" options={{ href: null }} />
+        <Tabs.Screen name="addresses/add" options={{ href: null }} />
+        <Tabs.Screen name="coupons/index" options={{ href: null }} />
+        <Tabs.Screen name="user-settings/index" options={{ href: null }} />
         
         {/* Admin routes (Only visible to admin, and hides tab bar when active) */}
         <Tabs.Screen 

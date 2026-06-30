@@ -1,180 +1,200 @@
-import { Image } from 'expo-image';
-import { SymbolView } from 'expo-symbols';
-import { Platform, Pressable, ScrollView, StyleSheet } from 'react-native';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, FlatList, ActivityIndicator, TouchableOpacity, ScrollView } from 'react-native';
+import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTheme } from '@/context/ThemeContext';
+import { Colors } from '@/constants/theme';
+import { productService, Product } from '@/services/productService';
+import ProductCard from '@/components/ProductCard';
+import SearchBar from '@/components/SearchBar';
+import { Ionicons } from '@expo/vector-icons';
 
-import { ExternalLink } from '@/components/external-link';
-import { ThemedText } from '@/components/themed-text';
-import { ThemedView } from '@/components/themed-view';
-import { Collapsible } from '@/components/ui/collapsible';
-import { WebBadge } from '@/components/web-badge';
-import { BottomTabInset, MaxContentWidth, Spacing } from '@/constants/theme';
-import { useTheme } from '@/hooks/use-theme';
+export default function ExploreScreen() {
+  const { scheme } = useTheme();
+  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const router = useRouter();
+  
+  const params = useLocalSearchParams();
+  const initialCategory = (params.category as string) || '';
+  const initialSearch = (params.search as string) || '';
+  const initialSort = (params.sort as string) || '';
 
-export default function TabTwoScreen() {
-  const safeAreaInsets = useSafeAreaInsets();
-  const insets = {
-    ...safeAreaInsets,
-    bottom: safeAreaInsets.bottom + BottomTabInset + Spacing.three,
+  const [allProducts, setAllProducts] = useState<Product[]>([]);
+  const [displayedProducts, setDisplayedProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [category, setCategory] = useState(initialCategory);
+  const [search, setSearch] = useState(initialSearch);
+  const [sort, setSort] = useState(initialSort);
+
+  // Fetch from backend ONLY ONCE on mount
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      try {
+        setLoading(true);
+        const data = await productService.getProducts();
+        setAllProducts(data);
+      } catch (error) {
+        console.error('Failed to load products', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchInitialData();
+  }, []);
+
+  // Filter and sort LOCALLY whenever params change
+  useEffect(() => {
+    let filtered = [...allProducts];
+    
+    if (category) {
+      filtered = filtered.filter(p => p.category.toLowerCase().includes(category.toLowerCase()));
+    }
+    
+    if (search) {
+      const query = search.toLowerCase();
+      filtered = filtered.filter(p => 
+        p.name.toLowerCase().includes(query) || 
+        p.description.toLowerCase().includes(query) ||
+        p.category.toLowerCase().includes(query)
+      );
+    }
+
+    if (sort === 'price_asc') {
+      filtered.sort((a, b) => a.price - b.price);
+    } else if (sort === 'price_desc') {
+      filtered.sort((a, b) => b.price - a.price);
+    } else if (sort === 'rating') {
+      filtered.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+    }
+
+    setDisplayedProducts(filtered);
+  }, [allProducts, category, search, sort]);
+
+  useEffect(() => {
+    // When URL params change externally
+    if (params.category !== undefined) setCategory(params.category as string);
+    if (params.search !== undefined) {
+      setSearch(params.search as string);
+      handleSearch(params.search as string);
+    }
+  }, [params.category, params.search]);
+
+  const handleSearch = (query: string) => {
+    setSearch(query);
   };
-  const theme = useTheme();
 
-  const contentPlatformStyle = Platform.select({
-    android: {
-      paddingTop: insets.top,
-      paddingLeft: insets.left,
-      paddingRight: insets.right,
-      paddingBottom: insets.bottom,
-    },
-    web: {
-      paddingTop: Spacing.six,
-      paddingBottom: Spacing.four,
-    },
-  });
+  const renderHeader = () => (
+    <View style={styles.headerContainer}>
+      <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
+        <TouchableOpacity onPress={() => router.push('/')} style={{ marginRight: 12 }}>
+          <Ionicons name="arrow-back" size={24} color={colors.text} />
+        </TouchableOpacity>
+        <Text style={[styles.title, { color: colors.text }]}>
+          {category ? category : search ? `Search: ${search}` : 'All Products'}
+        </Text>
+      </View>
+      <SearchBar onSearch={handleSearch} />
+      
+      <View style={styles.filterRow}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+          <TouchableOpacity 
+            style={[styles.filterChip, { backgroundColor: sort === '' ? colors.primary : colors.backgroundElement, borderColor: colors.border }]}
+            onPress={() => setSort('')}
+          >
+            <Text style={{ color: sort === '' ? '#fff' : colors.text }}>Relevance</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.filterChip, { backgroundColor: sort === 'price_asc' ? colors.primary : colors.backgroundElement, borderColor: colors.border }]}
+            onPress={() => setSort('price_asc')}
+          >
+            <Text style={{ color: sort === 'price_asc' ? '#fff' : colors.text }}>Price: Low to High</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.filterChip, { backgroundColor: sort === 'price_desc' ? colors.primary : colors.backgroundElement, borderColor: colors.border }]}
+            onPress={() => setSort('price_desc')}
+          >
+            <Text style={{ color: sort === 'price_desc' ? '#fff' : colors.text }}>Price: High to Low</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.filterChip, { backgroundColor: sort === 'rating' ? colors.primary : colors.backgroundElement, borderColor: colors.border }]}
+            onPress={() => setSort('rating')}
+          >
+            <Text style={{ color: sort === 'rating' ? '#fff' : colors.text }}>Top Rated</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </View>
+    </View>
+  );
 
   return (
-    <ScrollView
-      style={[styles.scrollView, { backgroundColor: theme.background }]}
-      contentInset={insets}
-      contentContainerStyle={[styles.contentContainer, contentPlatformStyle]}>
-      <ThemedView style={styles.container}>
-        <ThemedView style={styles.titleContainer}>
-          <ThemedText type="subtitle">Explore</ThemedText>
-          <ThemedText style={styles.centerText} themeColor="textSecondary">
-            This starter app includes example{'\n'}code to help you get started.
-          </ThemedText>
-
-          <ExternalLink href="https://docs.expo.dev" asChild>
-            <Pressable style={({ pressed }) => pressed && styles.pressed}>
-              <ThemedView type="backgroundElement" style={styles.linkButton}>
-                <ThemedText type="link">Expo documentation</ThemedText>
-                <SymbolView
-                  tintColor={theme.text}
-                  name={{ ios: 'arrow.up.right.square', android: 'link', web: 'link' }}
-                  size={12}
-                />
-              </ThemedView>
-            </Pressable>
-          </ExternalLink>
-        </ThemedView>
-
-        <ThemedView style={styles.sectionsWrapper}>
-          <Collapsible title="File-based routing">
-            <ThemedText type="small">
-              This app has two screens: <ThemedText type="code">src/app/index.tsx</ThemedText> and{' '}
-              <ThemedText type="code">src/app/explore.tsx</ThemedText>
-            </ThemedText>
-            <ThemedText type="small">
-              The layout file in <ThemedText type="code">src/app/_layout.tsx</ThemedText> sets up
-              the tab navigator.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/router/introduction">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Android, iOS, and web support">
-            <ThemedView type="backgroundElement" style={styles.collapsibleContent}>
-              <ThemedText type="small">
-                You can open this project on Android, iOS, and the web. To open the web version,
-                press <ThemedText type="smallBold">w</ThemedText> in the terminal running this
-                project.
-              </ThemedText>
-              <Image
-                source={require('@/assets/images/tutorial-web.png')}
-                style={styles.imageTutorial}
-              />
-            </ThemedView>
-          </Collapsible>
-
-          <Collapsible title="Images">
-            <ThemedText type="small">
-              For static images, you can use the <ThemedText type="code">@2x</ThemedText> and{' '}
-              <ThemedText type="code">@3x</ThemedText> suffixes to provide files for different
-              screen densities.
-            </ThemedText>
-            <Image source={require('@/assets/images/react-logo.png')} style={styles.imageReact} />
-            <ExternalLink href="https://reactnative.dev/docs/images">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Light and dark mode components">
-            <ThemedText type="small">
-              This template has light and dark mode support. The{' '}
-              <ThemedText type="code">useColorScheme()</ThemedText> hook lets you inspect what the
-              user&apos;s current color scheme is, and so you can adjust UI colors accordingly.
-            </ThemedText>
-            <ExternalLink href="https://docs.expo.dev/develop/user-interface/color-themes/">
-              <ThemedText type="linkPrimary">Learn more</ThemedText>
-            </ExternalLink>
-          </Collapsible>
-
-          <Collapsible title="Animations">
-            <ThemedText type="small">
-              This template includes an example of an animated component. The{' '}
-              <ThemedText type="code">src/components/ui/collapsible.tsx</ThemedText> component uses
-              the powerful <ThemedText type="code">react-native-reanimated</ThemedText> library to
-              animate opening this hint.
-            </ThemedText>
-          </Collapsible>
-        </ThemedView>
-        {Platform.OS === 'web' && <WebBadge />}
-      </ThemedView>
-    </ScrollView>
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {renderHeader()}
+      
+      {loading ? (
+        <View style={styles.centerContainer}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : displayedProducts.length === 0 ? (
+        <View style={styles.centerContainer}>
+          <Ionicons name="search" size={64} color={colors.textSecondary} style={{ marginBottom: 16 }} />
+          <Text style={{ fontSize: 18, color: colors.text, fontWeight: 'bold' }}>No Products Found</Text>
+          <Text style={{ color: colors.textSecondary, marginTop: 8 }}>Try adjusting your search or filters.</Text>
+        </View>
+      ) : (
+        <FlatList
+          data={displayedProducts}
+          keyExtractor={item => item._id}
+          numColumns={2}
+          contentContainerStyle={styles.listContent}
+          columnWrapperStyle={styles.row}
+          renderItem={({ item }) => (
+            <View style={styles.cardWrapper}>
+              <ProductCard product={item} />
+            </View>
+          )}
+        />
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  scrollView: {
-    flex: 1,
-  },
-  contentContainer: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-  },
   container: {
-    maxWidth: MaxContentWidth,
-    flexGrow: 1,
+    flex: 1,
+    paddingTop: 48,
   },
-  titleContainer: {
-    gap: Spacing.three,
-    alignItems: 'center',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.six,
+  headerContainer: {
+    paddingHorizontal: 16,
+    paddingBottom: 12,
   },
-  centerText: {
-    textAlign: 'center',
+  title: {
+    fontSize: 20,
+    fontWeight: 'bold',
   },
-  pressed: {
-    opacity: 0.7,
-  },
-  linkButton: {
+  filterRow: {
     flexDirection: 'row',
-    paddingHorizontal: Spacing.four,
-    paddingVertical: Spacing.two,
-    borderRadius: Spacing.five,
+    marginTop: 12,
+  },
+  filterChip: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginRight: 8,
+  },
+  listContent: {
+    paddingHorizontal: 16,
+    paddingBottom: 32,
+  },
+  row: {
+    justifyContent: 'space-between',
+    marginBottom: 16,
+  },
+  cardWrapper: {
+    width: '48%',
+  },
+  centerContainer: {
+    flex: 1,
     justifyContent: 'center',
-    gap: Spacing.one,
     alignItems: 'center',
-  },
-  sectionsWrapper: {
-    gap: Spacing.five,
-    paddingHorizontal: Spacing.four,
-    paddingTop: Spacing.three,
-  },
-  collapsibleContent: {
-    alignItems: 'center',
-  },
-  imageTutorial: {
-    width: '100%',
-    aspectRatio: 296 / 171,
-    borderRadius: Spacing.three,
-    marginTop: Spacing.two,
-  },
-  imageReact: {
-    width: 100,
-    height: 100,
-    alignSelf: 'center',
-  },
+  }
 });

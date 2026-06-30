@@ -3,10 +3,12 @@ import { View, TextInput, StyleSheet, TouchableOpacity, Platform, Alert, Activit
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/context/ThemeContext';
+import { useRouter } from 'expo-router';
 
 export default function SearchBar({ onSearch }: { onSearch?: (query: string) => void }) {
   const { scheme } = useTheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const router = useRouter();
   
   const [searchText, setSearchText] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -50,7 +52,13 @@ export default function SearchBar({ onSearch }: { onSearch?: (query: string) => 
   };
 
   const handleSubmit = () => {
-    if (onSearch) onSearch(searchText);
+    if (searchText.trim()) {
+      if (onSearch) {
+        onSearch(searchText);
+      } else {
+        router.push(`/explore?search=${encodeURIComponent(searchText)}`);
+      }
+    }
   };
 
   return (

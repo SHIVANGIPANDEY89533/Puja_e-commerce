@@ -3,10 +3,12 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image } from 'rea
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/context/ThemeContext';
 import { categoryService, Category } from '@/services/categoryService';
+import { useRouter } from 'expo-router';
 
 export default function CategorySlider() {
   const { scheme } = useTheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const router = useRouter();
   
   const [categories, setCategories] = useState<Category[]>([]);
 
@@ -22,7 +24,11 @@ export default function CategorySlider() {
     <View style={[styles.container, { backgroundColor: colors.backgroundElement }]}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {categories.map((category) => (
-          <TouchableOpacity key={category._id} style={styles.item}>
+          <TouchableOpacity 
+            key={category._id} 
+            style={styles.item}
+            onPress={() => router.push(`/explore?category=${encodeURIComponent(category.name)}`)}
+          >
             <View style={[styles.iconContainer, { backgroundColor: colors.backgroundSelected }]}>
               {category.icon ? (
                 <Image source={{ uri: category.icon }} style={{ width: 40, height: 40, borderRadius: 20 }} />

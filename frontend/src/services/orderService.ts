@@ -50,8 +50,14 @@ const updateOrderStatus = async (id: string, status: string, paymentStatus?: str
   return response.data;
 };
 
+const getMyOrders = async () => {
+  const response = await api.get<Order[]>('/orders/myorders');
+  return response.data;
+};
+
 export const orderService = {
   getOrders,
   getOrderById,
   updateOrderStatus,
+  getMyOrders,
 };

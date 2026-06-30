@@ -8,10 +8,12 @@ import CategorySlider from '@/components/CategorySlider';
 import BannerCarousel from '@/components/BannerCarousel';
 import HorizontalProductList from '@/components/HorizontalProductList';
 import { productService, Product } from '@/services/productService';
+import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
   const { scheme } = useTheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const router = useRouter();
   
   const [refreshing, setRefreshing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -44,11 +46,17 @@ export default function HomeScreen() {
 
   // Filter products by category dynamically
   const topSelling = products.slice(0, 5); // Mock top selling logic for now
-  const dailyPuja = products.filter(p => p.category === 'Daily Puja' || p.category === 'daily-puja');
-  const havan = products.filter(p => p.category === 'Havan' || p.category === 'havan');
-  const bartan = products.filter(p => p.category === 'Bartan' || p.category === 'puja-bartan');
-  const murti = products.filter(p => p.category === 'Murti' || p.category === 'murtis');
-  const flowers = products.filter(p => p.category === 'Flowers' || p.category === 'flowers');
+  
+  const isMatch = (p: Product, keywords: string[]) => {
+    const text = `${p.category || ''} ${p.name || ''} ${p.description || ''}`.toLowerCase();
+    return keywords.some(k => text.includes(k));
+  };
+
+  const dailyPuja = products.filter(p => isMatch(p, ['daily puja', 'daily-puja', 'samagri', 'diya', 'cotton wick']));
+  const havan = products.filter(p => isMatch(p, ['havan', 'hawan', 'wood', 'samidha']));
+  const bartan = products.filter(p => isMatch(p, ['bartan', 'brass', 'copper', 'thali', 'kalash', 'lota']));
+  const murti = products.filter(p => isMatch(p, ['murti', 'idol', 'statue', 'ganesh', 'laxmi', 'shiv']));
+  const flowers = products.filter(p => isMatch(p, ['flower', 'garland', 'mala', 'rose', 'marigold']));
 
   // Base UI sections that always render
   const sections = [
@@ -70,12 +78,12 @@ export default function HomeScreen() {
   } else {
     sections.push({ id: 'categories', component: <CategorySlider /> });
     sections.push({ id: 'banners', component: <BannerCarousel /> });
-    if (topSelling.length > 0) sections.push({ id: 'top_selling', component: <HorizontalProductList title="Top Selling Puja Items" data={topSelling} /> });
-    if (dailyPuja.length > 0) sections.push({ id: 'daily_puja', component: <HorizontalProductList title="Daily Puja Samagri" data={dailyPuja} /> });
-    if (havan.length > 0) sections.push({ id: 'havan', component: <HorizontalProductList title="Havan Samagri" data={havan} /> });
-    if (bartan.length > 0) sections.push({ id: 'bartan', component: <HorizontalProductList title="Puja Bartan" data={bartan} /> });
-    if (murti.length > 0) sections.push({ id: 'murti', component: <HorizontalProductList title="Murti Collection" data={murti} /> });
-    if (flowers.length > 0) sections.push({ id: 'flowers', component: <HorizontalProductList title="Flowers & Garland" data={flowers} /> });
+    if (topSelling.length > 0) sections.push({ id: 'top_selling', component: <HorizontalProductList title="Top Selling Puja Items" data={topSelling} onPressViewMore={() => router.push('/explore?sort=rating')} /> });
+    if (dailyPuja.length > 0) sections.push({ id: 'daily_puja', component: <HorizontalProductList title="Daily Puja Samagri" data={dailyPuja} onPressViewMore={() => router.push('/explore?category=Daily%20Puja')} /> });
+    if (havan.length > 0) sections.push({ id: 'havan', component: <HorizontalProductList title="Havan Samagri" data={havan} onPressViewMore={() => router.push('/explore?category=Havan')} /> });
+    if (bartan.length > 0) sections.push({ id: 'bartan', component: <HorizontalProductList title="Puja Bartan" data={bartan} onPressViewMore={() => router.push('/explore?category=Bartan')} /> });
+    if (murti.length > 0) sections.push({ id: 'murti', component: <HorizontalProductList title="Murti Collection" data={murti} onPressViewMore={() => router.push('/explore?category=Murti')} /> });
+    if (flowers.length > 0) sections.push({ id: 'flowers', component: <HorizontalProductList title="Flowers & Garland" data={flowers} onPressViewMore={() => router.push('/explore?category=Flowers')} /> });
   }
 
   // Handle network states

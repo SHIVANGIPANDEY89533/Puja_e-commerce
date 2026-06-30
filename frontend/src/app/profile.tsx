@@ -33,15 +33,39 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.menuContainer}>
-          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]}>
+          <TouchableOpacity 
+            style={[styles.menuItem, { borderBottomColor: colors.border }]}
+            onPress={() => router.push('/my-orders')}
+          >
             <Ionicons name="cart" size={24} color={colors.text} />
             <Text style={[styles.menuText, { color: colors.text }]}>My Orders</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
           </TouchableOpacity>
 
-          <TouchableOpacity style={[styles.menuItem, { borderBottomColor: colors.border }]}>
+          <TouchableOpacity 
+            style={[styles.menuItem, { borderBottomColor: colors.border }]}
+            onPress={() => router.push('/addresses')}
+          >
             <Ionicons name="location" size={24} color={colors.text} />
             <Text style={[styles.menuText, { color: colors.text }]}>Saved Addresses</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.menuItem, { borderBottomColor: colors.border }]}
+            onPress={() => router.push('/coupons')}
+          >
+            <Ionicons name="pricetag" size={24} color={colors.text} />
+            <Text style={[styles.menuText, { color: colors.text }]}>My Coupons</Text>
+            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
+          </TouchableOpacity>
+
+          <TouchableOpacity 
+            style={[styles.menuItem, { borderBottomColor: colors.border }]}
+            onPress={() => router.push('/user-settings')}
+          >
+            <Ionicons name="settings" size={24} color={colors.text} />
+            <Text style={[styles.menuText, { color: colors.text }]}>Settings</Text>
             <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
           </TouchableOpacity>
 
