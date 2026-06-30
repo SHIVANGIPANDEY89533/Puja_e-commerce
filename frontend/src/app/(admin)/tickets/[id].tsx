@@ -120,6 +120,20 @@ export default function AdminTicketDetailsScreen() {
           <Text style={[styles.customerInfo, { color: colors.textSecondary }]}>
             From: {ticket.user?.name} ({ticket.user?.email})
           </Text>
+          
+          {ticket.relatedOrder && (
+            <TouchableOpacity 
+              style={[styles.orderBox, { backgroundColor: colors.primary + '11', borderColor: colors.primary }]}
+              onPress={() => router.push(`/(admin)/orders/${ticket.relatedOrder._id}` as any)}
+            >
+              <Ionicons name="cart" size={16} color={colors.primary} />
+              <Text style={{ color: colors.primary, marginLeft: 8, fontWeight: 'bold' }}>
+                Related Order: #{ticket.relatedOrder._id.substring(0, 6)}
+              </Text>
+              <Text style={{ color: colors.primary, marginLeft: 'auto' }}>View Order ➔</Text>
+            </TouchableOpacity>
+          )}
+
           <View style={styles.metaRow}>
             <Text style={[styles.category, { color: colors.textSecondary }]}>{ticket.category}</Text>
             <Text style={[styles.priority, { color: colors.textSecondary }]}>Priority: {ticket.priority}</Text>
@@ -255,6 +269,14 @@ const styles = StyleSheet.create({
   metaRow: { flexDirection: 'row', gap: 16 },
   category: { fontSize: 13, fontWeight: '500' },
   priority: { fontSize: 13, fontWeight: '500' },
+  orderBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: 10,
+    borderWidth: 1,
+    borderRadius: 8,
+    marginBottom: 12,
+  },
   chatArea: { flex: 1 },
   messageWrapper: { flexDirection: 'row', marginBottom: 16, alignItems: 'flex-end' },
   userWrapper: { justifyContent: 'flex-start' },

@@ -1,4 +1,5 @@
 import Coupon from '../models/Coupon.js';
+import { notifyAdmins } from '../services/notificationService.js';
 
 // @desc    Get all coupons (Admin only)
 // @route   GET /api/coupons
@@ -31,6 +32,8 @@ const createCoupon = async (req, res) => {
       type,
       minCart
     });
+
+    await notifyAdmins('Info', 'Coupon Created', `Coupon ${coupon.code} was created successfully.`, coupon._id, 'Coupon');
 
     res.status(201).json(coupon);
   } catch (error) {

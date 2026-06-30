@@ -24,6 +24,11 @@ export interface Order {
   updatedAt: string;
   deliveryExecutive?: string;
   deliveryNotes?: string;
+  transactionId?: string;
+  paymentDate?: string;
+  paymentAmount?: number;
+  razorpayOrderId?: string;
+  razorpayPaymentId?: string;
 }
 
 const getOrders = async () => {

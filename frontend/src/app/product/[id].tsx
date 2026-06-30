@@ -43,7 +43,8 @@ export default function ProductDetailScreen() {
           setBanner(banners[0]);
         }
       } catch (err) {
-        console.error('Failed to load product details', err);
+        console.log('Failed to load product details', err);
+        setProduct(null);
       } finally {
         setLoading(false);
       }
@@ -74,10 +75,28 @@ export default function ProductDetailScreen() {
     </TouchableOpacity>
   );
 
-  if (loading || !product) {
+  if (loading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
         <ActivityIndicator size="large" color={colors.primary} />
+      </View>
+    );
+  }
+
+  if (!product) {
+    return (
+      <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
+        <Ionicons name="alert-circle-outline" size={64} color={colors.textSecondary} style={{ marginBottom: 16 }} />
+        <Text style={{ fontSize: 18, color: colors.text, fontWeight: 'bold' }}>Product Not Found</Text>
+        <Text style={{ fontSize: 14, color: colors.textSecondary, marginTop: 8, textAlign: 'center', paddingHorizontal: 32 }}>
+          The product you are looking for does not exist or has been removed.
+        </Text>
+        <TouchableOpacity 
+          style={{ marginTop: 24, paddingVertical: 12, paddingHorizontal: 24, backgroundColor: colors.primary, borderRadius: 8 }}
+          onPress={() => router.back()}
+        >
+          <Text style={{ color: '#fff', fontWeight: 'bold' }}>Go Back</Text>
+        </TouchableOpacity>
       </View>
     );
   }

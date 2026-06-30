@@ -16,12 +16,18 @@ import campaignRoutes from './routes/campaignRoutes.js';
 import seoRoutes from './routes/seoRoutes.js';
 import ticketRoutes from './routes/ticketRoutes.js';
 import notificationRoutes from './routes/notificationRoutes.js';
+import settingRoutes from './routes/settingRoutes.js';
+import reportRoutes from './routes/reportRoutes.js';
+import paymentRoutes from './routes/paymentRoutes.js';
 
 // Load env vars
 dotenv.config();
 
 // Connect Database
 connectDB();
+
+import { initRazorpay } from './services/paymentService.js';
+initRazorpay();
 
 const app = express();
 
@@ -47,6 +53,13 @@ app.use('/api/campaigns', campaignRoutes);
 app.use('/api/seo', seoRoutes);
 app.use('/api/tickets', ticketRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/settings', settingRoutes);
+app.use('/api/reports', reportRoutes);
+app.use('/api/payments', paymentRoutes);
+
+app.get('/api/config/razorpay', (req, res) => {
+  res.send(process.env.RAZORPAY_KEY_ID || 'mock_key_id');
+});
 
 // Error handling middleware
 app.use((err, req, res, next) => {

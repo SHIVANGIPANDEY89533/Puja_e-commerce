@@ -1,6 +1,7 @@
 import Order from '../models/Order.js';
 import Product from '../models/Product.js';
 import Cart from '../models/Cart.js';
+import { notifyAdmins } from '../services/notificationService.js';
 
 // @desc    Create new order
 // @route   POST /api/orders
@@ -43,6 +44,14 @@ const addOrderItems = async (req, res) => {
       cart.items = [];
       await cart.save();
     }
+
+    await notifyAdmins(
+      'Success',
+      'New Order Placed',
+      `Order #${createdOrder._id.toString().substring(0, 6)} placed by ${userName} for ₹${total}`,
+      createdOrder._id,
+      'Order'
+    );
 
     res.status(201).json(createdOrder);
   } catch (error) {
@@ -164,10 +173,28 @@ const updateOrderStatusAdmin = async (req, res) => {
     const order = await Order.findById(req.params.id);
 
     if (order) {
-      if (status) order.status = status;
-      if (paymentStatus) order.paymentStatus = paymentStatus;
+      let statusChanged = false;
+      if (status && order.status !== status) {
+        order.status = status;
+        statusChanged = true;
+      }
+      
+      if (paymentStatus && order.paymentStatus !== paymentStatus) {
+        order.paymentStatus = paymentStatus;
+        statusChanged = true;
+      }
 
       const updatedOrder = await order.save();
+
+      if (statusChanged) {
+        if (status === 'Cancelled' || status === 'Returned') {
+          await notifyAdmins('Warning', `Order ${status}`, `Order #${order._id.toString().substring(0, 6)} was ${status}`, order._id, 'Order');
+        }
+        if (paymentStatus === 'Failed' || paymentStatus === 'Refunded') {
+          await notifyAdmins('Error', `Payment ${paymentStatus}`, `Payment for Order #${order._id.toString().substring(0, 6)} is ${paymentStatus}`, order._id, 'Order');
+        }
+      }
+
       res.json(updatedOrder);
     } else {
       res.status(404).json({ message: 'Order not found' });

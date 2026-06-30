@@ -1,5 +1,7 @@
 import Product from '../models/Product.js';
 import Category from '../models/Category.js';
+import { notifyAdmins } from '../services/notificationService.js';
+import mongoose from 'mongoose';
 
 // @desc    Fetch all products with optional filters
 // @route   GET /api/products
@@ -63,6 +65,9 @@ const getProducts = async (req, res) => {
 // @access  Public
 const getProductById = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
     const product = await Product.findById(req.params.id);
 
     if (product) {
@@ -92,6 +97,9 @@ const getProductCategories = async (req, res) => {
 // @access  Public
 const getSimilarProducts = async (req, res) => {
   try {
+    if (!mongoose.Types.ObjectId.isValid(req.params.id)) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
     const product = await Product.findById(req.params.id);
     if (!product) {
       return res.status(404).json({ message: 'Product not found' });
@@ -138,6 +146,9 @@ const addProduct = async (req, res) => {
     });
 
     const createdProduct = await product.save();
+    
+    await notifyAdmins('Info', 'New Product Added', `Product "${name}" was added to the catalog.`, createdProduct._id, 'Product');
+
     res.status(201).json(createdProduct);
   } catch (error) {
     res.status(500).json({ message: error.message });
@@ -164,6 +175,16 @@ const updateProduct = async (req, res) => {
       product.features = features || product.features;
 
       const updatedProduct = await product.save();
+
+      // Stock alerts
+      if (updatedProduct.stock === 0) {
+        await notifyAdmins('Error', 'Product Out of Stock', `Product "${updatedProduct.name}" is out of stock!`, updatedProduct._id, 'Product');
+      } else if (updatedProduct.stock <= 5) {
+        await notifyAdmins('Warning', 'Low Stock Alert', `Product "${updatedProduct.name}" is running low on stock (${updatedProduct.stock} left).`, updatedProduct._id, 'Product');
+      }
+
+      await notifyAdmins('Info', 'Product Updated', `Product "${updatedProduct.name}" was updated.`, updatedProduct._id, 'Product');
+
       res.json(updatedProduct);
     } else {
       res.status(404).json({ message: 'Product not found' });
@@ -182,6 +203,9 @@ const deleteProduct = async (req, res) => {
 
     if (product) {
       await product.deleteOne();
+      
+      await notifyAdmins('Warning', 'Product Deleted', `Product "${product.name}" was removed from the catalog.`, null, 'Product');
+
       res.json({ message: 'Product removed successfully' });
     } else {
       res.status(404).json({ message: 'Product not found' });
@@ -256,6 +280,9 @@ const bulkUploadProducts = async (req, res) => {
     }
 
     const createdProducts = await Product.insertMany(formattedProducts);
+    
+    await notifyAdmins('Success', 'Products Bulk Uploaded', `${createdProducts.length} products were successfully bulk uploaded.`, null, 'Product');
+
     res.status(201).json({
       message: `${createdProducts.length} products uploaded successfully.`,
       products: createdProducts

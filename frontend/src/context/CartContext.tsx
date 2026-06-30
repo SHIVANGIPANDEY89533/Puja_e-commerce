@@ -25,7 +25,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const { user, token } = useAuth();
   const router = useRouter();
 
-  const cartItems = cart?.items || [];
+  const cartItems = (cart?.items || []).filter(item => item && item.product && item.product._id);
   const cartCount = cartItems.reduce((acc, item) => acc + item.quantity, 0);
   const cartTotal = cartItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
 
@@ -73,7 +73,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     const previousCart = cart;
     if (cart) {
       const newItems = cart.items.map(item => 
-        item.product._id === productId ? { ...item, quantity } : item
+        item.product?._id === productId ? { ...item, quantity } : item
       ).filter(item => item.quantity > 0);
       setCart({ ...cart, items: newItems });
     }
@@ -94,7 +94,7 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
     // Optimistic update
     const previousCart = cart;
     if (cart) {
-      setCart({ ...cart, items: cart.items.filter(i => i.product._id !== productId) });
+      setCart({ ...cart, items: cart.items.filter(i => i.product?._id !== productId) });
     }
 
     try {

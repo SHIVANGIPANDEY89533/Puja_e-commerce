@@ -2,7 +2,8 @@ import express from 'express';
 import { 
   getCampaigns, 
   createCampaign, 
-  updateCampaignStatus 
+  updateCampaignStatus,
+  deleteCampaign
 } from '../controllers/campaignController.js';
 import { protect, admin } from '../middleware/authMiddleware.js';
 
@@ -14,5 +15,8 @@ router.route('/')
 
 router.route('/:id/status')
   .put(protect, admin, updateCampaignStatus);
+
+router.route('/:id')
+  .delete(protect, admin, deleteCampaign);
 
 export default router;

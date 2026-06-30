@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 
 const orderItemSchema = mongoose.Schema({
-  id: { type: Number, required: true },
+  id: { type: String, required: true },
   name: { type: String, required: true },
   price: { type: Number, required: true },
   qty: { type: Number, required: true }
@@ -42,12 +42,38 @@ const orderSchema = mongoose.Schema(
     },
     paymentMethod: {
       type: String,
-      required: true
+      required: true,
+      enum: ['UPI', 'Credit Card', 'Debit Card', 'Net Banking', 'Wallets', 'EMI', 'Cash on Delivery']
     },
     paymentStatus: {
       type: String,
       required: true,
+      enum: ['Pending', 'Paid', 'Failed', 'Refunded', 'Cancelled'],
       default: 'Pending'
+    },
+    razorpayOrderId: {
+      type: String,
+      default: null
+    },
+    razorpayPaymentId: {
+      type: String,
+      default: null
+    },
+    transactionId: {
+      type: String,
+      default: null
+    },
+    paymentDate: {
+      type: Date,
+      default: null
+    },
+    paymentAmount: {
+      type: Number,
+      default: 0
+    },
+    paymentCurrency: {
+      type: String,
+      default: 'INR'
     },
     deliveryExecutive: {
       type: String,

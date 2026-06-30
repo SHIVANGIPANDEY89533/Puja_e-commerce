@@ -1,4 +1,5 @@
 import Banner from '../models/Banner.js';
+import { notifyAdmins } from '../services/notificationService.js';
 
 // @desc    Get active banners for a specific position
 // @route   GET /api/banners?position=Home
@@ -64,6 +65,8 @@ const updateBanner = async (req, res) => {
   try {
     const banner = await Banner.findById(req.params.id);
     if (banner) {
+      const oldStatus = banner.status;
+      
       banner.title = req.body.title || banner.title;
       banner.image = req.body.image || banner.image;
       banner.redirectUrl = req.body.redirectUrl !== undefined ? req.body.redirectUrl : banner.redirectUrl;
@@ -74,6 +77,15 @@ const updateBanner = async (req, res) => {
       banner.status = req.body.status || banner.status;
 
       const updatedBanner = await banner.save();
+
+      if (req.body.status && req.body.status !== oldStatus) {
+        if (req.body.status === 'Active') {
+          await notifyAdmins('Info', 'Banner Activated', `Banner "${updatedBanner.title}" has been activated.`, updatedBanner._id, 'Banner');
+        } else if (req.body.status === 'Inactive') {
+          await notifyAdmins('Warning', 'Banner Deactivated', `Banner "${updatedBanner.title}" has been deactivated.`, updatedBanner._id, 'Banner');
+        }
+      }
+
       res.json(updatedBanner);
     } else {
       res.status(404).json({ message: 'Banner not found' });

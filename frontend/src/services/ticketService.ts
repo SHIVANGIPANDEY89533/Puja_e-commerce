@@ -25,6 +25,9 @@ export interface Ticket {
   priority: 'Low' | 'Medium' | 'High' | 'Urgent';
   status: 'Open' | 'In Progress' | 'Waiting for Customer' | 'Resolved' | 'Closed';
   attachments: string[];
+  relatedOrder?: {
+    _id: string;
+  };
   assignedAdmin?: string;
   aiSessionId?: string;
   aiChatHistory?: { sender: string; message: string; createdAt?: string }[];

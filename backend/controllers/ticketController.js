@@ -2,6 +2,7 @@ import asyncHandler from 'express-async-handler';
 import Ticket from '../models/Ticket.js';
 import Notification from '../models/Notification.js';
 import { getAIResponse } from '../services/aiService.js';
+import { notifyAdmins } from '../services/notificationService.js';
 
 import AIChat from '../models/AIChat.js';
 
@@ -35,7 +36,7 @@ const getAIChatHistory = asyncHandler(async (req, res) => {
 // @route   POST /api/tickets
 // @access  Private
 const createTicket = asyncHandler(async (req, res) => {
-  const { subject, category, description, priority, attachments, initialMessages, aiSessionId } = req.body;
+  const { subject, category, description, priority, attachments, initialMessages, aiSessionId, orderId } = req.body;
 
   const ticket = await Ticket.create({
     user: req.user._id,
@@ -46,17 +47,22 @@ const createTicket = asyncHandler(async (req, res) => {
     status: 'Open',
     attachments: attachments || [],
     messages: initialMessages || [],
-    aiSessionId
+    aiSessionId,
+    relatedOrder: orderId || null
   });
 
-  // Create notification for admin (simulated by assigning to generic 'admin' logic or just generic string in this simplified notification table)
-  // Since Notifications are assigned to a specific user, we might want to notify all admins. 
-  // For simplicity, we just notify the customer that their ticket was received.
+  // Notify Customer
   await Notification.create({
     user: req.user._id,
+    type: 'Success',
+    title: 'Ticket Created',
     message: `Your support ticket #${ticket._id.toString().substring(0, 6)} has been created successfully.`,
-    relatedTicket: ticket._id
+    relatedId: ticket._id,
+    resourceType: 'Ticket'
   });
+
+  // Notify Admins
+  await notifyAdmins('Info', 'New Support Ticket', `Ticket #${ticket._id.toString().substring(0, 6)} created by ${req.user.name}`, ticket._id, 'Ticket');
 
   res.status(201).json(ticket);
 });
@@ -93,6 +99,7 @@ const getTicketById = asyncHandler(async (req, res) => {
   const ticket = await Ticket.findById(req.params.id)
     .populate('user', 'name email')
     .populate('messages.senderId', 'name role')
+    .populate('relatedOrder')
     .lean();
 
   if (!ticket) {
@@ -150,12 +157,15 @@ const addTicketMessage = asyncHandler(async (req, res) => {
     // Notify Customer
     await Notification.create({
       user: ticket.user,
+      type: 'Info',
+      title: 'Ticket Reply',
       message: `An admin has replied to your ticket: ${ticket.subject}`,
-      relatedTicket: ticket._id
+      relatedId: ticket._id,
+      resourceType: 'Ticket'
     });
   } else {
     ticket.status = 'In Progress';
-    // Ideally notify assignedAdmin here
+    await notifyAdmins('Info', 'Ticket Reply', `Customer replied to ticket: ${ticket.subject}`, ticket._id, 'Ticket');
   }
 
   await ticket.save();

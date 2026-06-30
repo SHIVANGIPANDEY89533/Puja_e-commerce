@@ -78,6 +78,11 @@ const ticketSchema = mongoose.Schema(
       type: String,
       required: false
     },
+    relatedOrder: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'Order',
+      required: false
+    },
     messages: [messageSchema]
   },
   {

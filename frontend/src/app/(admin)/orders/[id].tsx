@@ -90,8 +90,23 @@ export default function OrderDetailsScreen() {
           <View style={styles.detailCol}>
             <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Payment Method</Text>
             <Text style={[styles.detailValue, { color: colors.text, fontWeight: 'bold' }]}>{order.paymentMethod}</Text>
+            
             <Text style={[styles.detailLabel, { color: colors.textSecondary, marginTop: 8 }]}>Payment Status</Text>
             <Text style={[styles.detailValue, { color: colors.text, fontWeight: 'bold' }]}>{order.paymentStatus}</Text>
+
+            {order.transactionId && (
+              <>
+                <Text style={[styles.detailLabel, { color: colors.textSecondary, marginTop: 8 }]}>Transaction ID</Text>
+                <Text style={[styles.detailValue, { color: colors.text, fontSize: 13 }]}>{order.transactionId}</Text>
+              </>
+            )}
+            
+            {order.paymentDate && (
+              <>
+                <Text style={[styles.detailLabel, { color: colors.textSecondary, marginTop: 8 }]}>Payment Date</Text>
+                <Text style={[styles.detailValue, { color: colors.text, fontSize: 13 }]}>{new Date(order.paymentDate).toLocaleString()}</Text>
+              </>
+            )}
           </View>
           <View style={styles.detailCol}>
             <Text style={[styles.detailLabel, { color: colors.textSecondary }]}>Current Order Status</Text>

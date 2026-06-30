@@ -2,8 +2,12 @@ import api from './api';
 
 export interface Notification {
   _id: string;
+  user: string;
+  type: 'Info' | 'Success' | 'Warning' | 'Error';
+  title: string;
   message: string;
-  relatedTicket?: string;
+  relatedId?: string;
+  resourceType?: string;
   isRead: boolean;
   createdAt: string;
 }
@@ -19,7 +23,18 @@ export const notificationService = {
     return response.data;
   },
 
-  markAllAsRead: async (): Promise<void> => {
-    await api.put('/notifications/read-all');
+  markAllAsRead: async (): Promise<{ message: string }> => {
+    const response = await api.put('/notifications/read-all');
+    return response.data;
+  },
+
+  deleteNotification: async (id: string): Promise<{ message: string }> => {
+    const response = await api.delete(`/notifications/${id}`);
+    return response.data;
+  },
+
+  clearAllNotifications: async (): Promise<{ message: string }> => {
+    const response = await api.delete('/notifications/clear-all');
+    return response.data;
   }
 };

@@ -147,7 +147,10 @@ export default function CartScreen() {
               <Text style={{ color: colors.textSecondary, fontSize: 12 }}>Total</Text>
               <Text style={[styles.checkoutTotal, { color: colors.text }]}>₹{grandTotal}</Text>
             </View>
-            <TouchableOpacity style={[styles.checkoutBtn, { backgroundColor: '#FB641B' }]}>
+            <TouchableOpacity 
+              style={[styles.checkoutBtn, { backgroundColor: '#FB641B' }]}
+              onPress={() => router.push('/checkout')}
+            >
               <Text style={styles.checkoutBtnText}>Proceed to Checkout</Text>
             </TouchableOpacity>
           </View>

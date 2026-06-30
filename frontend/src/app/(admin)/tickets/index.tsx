@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, TextInput, Platform } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, TextInput, Platform, ScrollView } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
@@ -140,6 +140,16 @@ export default function AdminTicketsScreen() {
             <FilterBadge label="Waiting for Customer" value="Waiting for Customer" current={filterStatus} setter={setFilterStatus} />
             <FilterBadge label="Resolved" value="Resolved" current={filterStatus} setter={setFilterStatus} />
             <FilterBadge label="Closed" value="Closed" current={filterStatus} setter={setFilterStatus} />
+          </ScrollView>
+        </View>
+
+        <View style={styles.filtersContainer}>
+          <Text style={[styles.filterLabel, { color: colors.textSecondary }]}>Priority:</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterScroll}>
+            <FilterBadge label="Low" value="Low" current={filterPriority} setter={setFilterPriority} />
+            <FilterBadge label="Medium" value="Medium" current={filterPriority} setter={setFilterPriority} />
+            <FilterBadge label="High" value="High" current={filterPriority} setter={setFilterPriority} />
+            <FilterBadge label="Urgent" value="Urgent" current={filterPriority} setter={setFilterPriority} />
           </ScrollView>
         </View>
 

@@ -1,6 +1,7 @@
 import bcrypt from 'bcryptjs';
 import User from '../models/User.js';
 import generateToken from '../utils/generateToken.js';
+import { notifyAdmins } from '../services/notificationService.js';
 
 // @desc    Register a new user
 // @route   POST /api/users/register
@@ -29,6 +30,7 @@ const registerUser = async (req, res) => {
     });
 
     if (user) {
+      await notifyAdmins('Info', 'New User Registered', `User ${name} (${email}) has registered.`, user._id, 'User');
       res.status(201).json({
         _id: user._id,
         name: user.name,
@@ -153,8 +155,14 @@ const updateUserRole = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (user) {
+      const oldRole = user.role;
       user.role = req.body.role || user.role;
       const updatedUser = await user.save();
+      
+      if (oldRole !== 'admin' && updatedUser.role === 'admin') {
+        await notifyAdmins('Warning', 'New Admin Created', `User ${updatedUser.email} has been granted Admin privileges.`, updatedUser._id, 'User');
+      }
+
       res.json({
         _id: updatedUser._id,
         name: updatedUser.name,
@@ -177,8 +185,14 @@ const updateUserStatus = async (req, res) => {
   try {
     const user = await User.findById(req.params.id);
     if (user) {
+      const wasActive = user.isActive;
       user.isActive = req.body.isActive !== undefined ? req.body.isActive : user.isActive;
       const updatedUser = await user.save();
+      
+      if (wasActive && !updatedUser.isActive) {
+        await notifyAdmins('Warning', 'User Deactivated', `User ${updatedUser.email} has been deactivated.`, updatedUser._id, 'User');
+      }
+
       res.json({
         _id: updatedUser._id,
         name: updatedUser.name,

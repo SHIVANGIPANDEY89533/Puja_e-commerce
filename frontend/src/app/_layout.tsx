@@ -82,6 +82,7 @@ function TabNavigator() {
         
         {/* Hidden internal routes */}
         <Tabs.Screen name="product/[id]" options={{ href: null }} />
+        <Tabs.Screen name="checkout" options={{ href: null }} />
         <Tabs.Screen name="notifications" options={{ href: null }} />
         <Tabs.Screen name="support/index" options={{ href: null }} />
         <Tabs.Screen name="support/create" options={{ href: null }} />

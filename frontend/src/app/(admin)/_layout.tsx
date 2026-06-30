@@ -5,6 +5,111 @@ import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import { useAuth } from '@/context/AuthContext';
+import { notificationService, Notification } from '@/services/notificationService';
+
+const NotificationBell = ({ colors, router }: { colors: any, router: any }) => {
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const fetchNotifications = async () => {
+    try {
+      const data = await notificationService.getMyNotifications();
+      setNotifications(data);
+    } catch (err) {
+      console.log('Error fetching notifications:', err);
+    }
+  };
+
+  React.useEffect(() => {
+    fetchNotifications();
+    const interval = setInterval(fetchNotifications, 30000); // Poll every 30s
+    return () => clearInterval(interval);
+  }, []);
+
+  const unreadCount = notifications.filter(n => !n.isRead).length;
+
+  const handleMarkAllRead = async () => {
+    setNotifications(prev => prev.map(n => ({ ...n, isRead: true }))); // Optimistic update
+    try {
+      await notificationService.markAllAsRead();
+    } catch (err) {}
+  };
+
+  const handleClearAll = async () => {
+    setNotifications([]); // Optimistic update
+    try {
+      await notificationService.clearAllNotifications();
+      setShowDropdown(false);
+    } catch (err) {}
+  };
+
+  const handleNotificationClick = async (notif: Notification) => {
+    if (!notif.isRead) {
+      // Optimistic update for instant feedback
+      setNotifications(prev => prev.map(n => n._id === notif._id ? { ...n, isRead: true } : n));
+      
+      // Background sync
+      notificationService.markAsRead(notif._id).catch(err => console.log(err));
+    }
+    setShowDropdown(false);
+
+    if (notif.resourceType === 'Order') router.push(`/(admin)/orders/${notif.relatedId}`);
+    else if (notif.resourceType === 'Ticket') router.push(`/(admin)/tickets/${notif.relatedId}`);
+    else if (notif.resourceType === 'Product') router.push(`/(admin)/products`);
+    else if (notif.resourceType === 'User') router.push(`/(admin)/users`);
+    else if (notif.resourceType === 'Coupon') router.push(`/(admin)/coupons`);
+    else if (notif.resourceType === 'Campaign') router.push(`/(admin)/campaigns`);
+    else if (notif.resourceType === 'Banner') router.push(`/(admin)/banners`);
+  };
+
+  return (
+    <View style={{ position: 'relative', zIndex: 9999 }}>
+      <TouchableOpacity onPress={() => setShowDropdown(!showDropdown)} style={{ marginRight: 20 }}>
+        <Ionicons name="notifications-outline" size={24} color={colors.text} />
+        {unreadCount > 0 && (
+          <View style={styles.badge}>
+            <Text style={styles.badgeText}>{unreadCount > 9 ? '9+' : unreadCount}</Text>
+          </View>
+        )}
+      </TouchableOpacity>
+
+      {showDropdown && (
+        <View style={[styles.notificationDropdown, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+          <View style={[styles.notifHeader, { borderBottomColor: colors.border }]}>
+            <Text style={[styles.notifTitle, { color: colors.text }]}>Notifications</Text>
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <TouchableOpacity onPress={handleMarkAllRead}>
+                <Text style={{ color: colors.primary, fontSize: 12 }}>Mark all read</Text>
+              </TouchableOpacity>
+              <TouchableOpacity onPress={handleClearAll}>
+                <Text style={{ color: '#E74C3C', fontSize: 12 }}>Clear all</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+          <ScrollView style={{ maxHeight: 300 }}>
+            {notifications.length === 0 ? (
+              <Text style={{ color: colors.textSecondary, padding: 16, textAlign: 'center' }}>No notifications.</Text>
+            ) : (
+              notifications.map(notif => (
+                <TouchableOpacity 
+                  key={notif._id} 
+                  style={[styles.notifItem, !notif.isRead && { backgroundColor: colors.primary + '11' }, { borderBottomColor: colors.border }]}
+                  onPress={() => handleNotificationClick(notif)}
+                >
+                  <Text style={[styles.notifItemTitle, { color: colors.text }]} numberOfLines={1}>{notif.title}</Text>
+                  <Text style={[styles.notifItemMessage, { color: colors.textSecondary }]} numberOfLines={2}>{notif.message}</Text>
+                  <Text style={{ color: colors.primary, fontSize: 10, marginTop: 4 }}>
+                    {new Date(notif.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </Text>
+                </TouchableOpacity>
+              ))
+            )}
+          </ScrollView>
+        </View>
+      )}
+    </View>
+  );
+};
 
 export default function AdminLayout() {
   const { scheme, toggleTheme } = useTheme();
@@ -68,6 +173,13 @@ export default function AdminLayout() {
         })}
       </ScrollView>
       <View style={[styles.sidebarFooter, { borderTopColor: colors.border }]}>
+        <TouchableOpacity style={[styles.logoutButton, { marginBottom: 20 }]} onPress={() => {
+          router.replace('/');
+          if (!isDesktop) setMobileMenuOpen(false);
+        }}>
+          <Ionicons name="home-outline" size={20} color={colors.primary} />
+          <Text style={[styles.sidebarItemText, { color: colors.primary }]}>Go to App Home</Text>
+        </TouchableOpacity>
         <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
           <Ionicons name="log-out-outline" size={20} color="#E74C3C" />
           <Text style={[styles.sidebarItemText, { color: '#E74C3C' }]}>Logout</Text>
@@ -117,6 +229,7 @@ export default function AdminLayout() {
           </View>
 
           <View style={styles.headerRight}>
+            <NotificationBell colors={colors} router={router} />
             <TouchableOpacity onPress={toggleTheme} style={{ marginRight: 20 }}>
               <Ionicons name={scheme === 'dark' ? 'sunny' : 'moon'} size={24} color={colors.text} />
             </TouchableOpacity>
@@ -203,6 +316,8 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 20,
     borderBottomWidth: 1,
+    zIndex: 999, // Ensure dropdown renders above page content
+    elevation: 999, // For Android
   },
   headerLeft: {
     flexDirection: 'row',
@@ -218,6 +333,8 @@ const styles = StyleSheet.create({
   headerRight: {
     flexDirection: 'row',
     alignItems: 'center',
+    zIndex: 999,
+    elevation: 999,
   },
   profileBadge: {
     width: 36,
@@ -238,5 +355,60 @@ const styles = StyleSheet.create({
   },
   pageContainer: {
     flex: 1,
+  },
+  badge: {
+    position: 'absolute',
+    top: -4,
+    right: -4,
+    backgroundColor: '#E74C3C',
+    borderRadius: 10,
+    width: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#fff'
+  },
+  badgeText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: 'bold',
+  },
+  notificationDropdown: {
+    position: 'absolute',
+    top: 40,
+    right: 0,
+    width: 320,
+    borderWidth: 1,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: 'hidden',
+  },
+  notifHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: 12,
+    borderBottomWidth: 1,
+  },
+  notifTitle: {
+    fontWeight: 'bold',
+    fontSize: 14,
+  },
+  notifItem: {
+    padding: 12,
+    borderBottomWidth: 1,
+  },
+  notifItemTitle: {
+    fontWeight: 'bold',
+    fontSize: 13,
+    marginBottom: 4,
+  },
+  notifItemMessage: {
+    fontSize: 12,
   }
 });
