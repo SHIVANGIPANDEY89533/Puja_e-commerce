@@ -9,15 +9,16 @@ interface HorizontalProductListProps {
   title: string;
   data: any[];
   onPressViewMore?: () => void;
+  href?: any;
 }
 
-export default function HorizontalProductList({ title, data, onPressViewMore }: HorizontalProductListProps) {
+export default function HorizontalProductList({ title, data, onPressViewMore, href }: HorizontalProductListProps) {
   const { scheme } = useTheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
 
   return (
     <View style={[styles.container, { backgroundColor: colors.backgroundElement }]}>
-      <SectionHeader title={title} onPressViewMore={onPressViewMore} />
+      <SectionHeader title={title} onPressViewMore={onPressViewMore} href={href} />
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}

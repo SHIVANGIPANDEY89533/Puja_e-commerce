@@ -3,7 +3,9 @@ import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, Activi
 import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
 import { productService } from '@/services/productService';
+import { categoryService, Category } from '@/services/categoryService';
 import { useRouter } from 'expo-router';
+import { useEffect } from 'react';
 
 export default function AddProductScreen() {
   const { scheme } = useTheme();
@@ -19,6 +21,11 @@ export default function AddProductScreen() {
   const [image, setImage] = useState('');
   const [features, setFeatures] = useState('');
   const [loading, setLoading] = useState(false);
+  const [categories, setCategories] = useState<Category[]>([]);
+
+  useEffect(() => {
+    categoryService.getAllCategories().then(data => setCategories(data)).catch(console.error);
+  }, []);
 
   const handleSubmit = async () => {
     if (!name || !category || !price) {
@@ -56,7 +63,22 @@ export default function AddProductScreen() {
       <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.backgroundElement }]} value={name} onChangeText={setName} placeholder="Enter product name" placeholderTextColor={colors.textSecondary} />
 
       <Text style={[styles.label, { color: colors.text }]}>Category *</Text>
-      <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.backgroundElement }]} value={category} onChangeText={setCategory} placeholder="e.g. Daily Puja, Murti, Havan" placeholderTextColor={colors.textSecondary} />
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {categories.map(c => (
+          <TouchableOpacity 
+            key={c._id} 
+            onPress={() => setCategory(c.name)}
+            style={{ 
+              paddingHorizontal: 12, paddingVertical: 6, borderRadius: 16, 
+              backgroundColor: category === c.name || category === c._id ? colors.primary : colors.backgroundElement,
+              borderWidth: 1, borderColor: colors.border
+            }}
+          >
+            <Text style={{ color: category === c.name || category === c._id ? '#fff' : colors.text, fontSize: 14 }}>{c.name}</Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+      <TextInput style={[styles.input, { borderColor: colors.border, color: colors.text, backgroundColor: colors.backgroundElement, marginTop: 8 }]} value={category} onChangeText={setCategory} placeholder="Or type a new category name..." placeholderTextColor={colors.textSecondary} />
 
       <View style={styles.row}>
         <View style={{ flex: 1, marginRight: 8 }}>

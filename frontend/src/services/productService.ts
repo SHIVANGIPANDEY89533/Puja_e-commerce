@@ -26,6 +26,25 @@ export interface Category {
 const API_URL = 'http://localhost:5000/api/products';
 const CATEGORY_API_URL = 'http://localhost:5000/api/categories';
 
+// Simple global state for passing category filter between tabs
+let globalSelectedCategory = '';
+export const setGlobalCategory = (id: string) => { globalSelectedCategory = id; };
+export const getGlobalCategory = () => globalSelectedCategory;
+
+const sanitizeImageUrl = (url?: string) => {
+  if (!url) return 'https://via.placeholder.com/300?text=No+Image';
+  if (url.startsWith('http') || url.startsWith('data:')) return url;
+  // It's a local dummy file (like diya_31.jpg) that doesn't exist on the frontend
+  return `https://via.placeholder.com/300?text=${url}`;
+};
+
+const sanitizeProduct = (product: Product): Product => ({
+  ...product,
+  images: product.images?.length 
+    ? product.images.map(sanitizeImageUrl) 
+    : ['https://via.placeholder.com/300?text=No+Image']
+});
+
 const getProducts = async (categoryId?: string, search?: string, sort?: string, minPrice?: number, maxPrice?: number) => {
   const params: any = {};
   if (categoryId) params.categoryId = categoryId;
@@ -35,12 +54,12 @@ const getProducts = async (categoryId?: string, search?: string, sort?: string, 
   if (maxPrice !== undefined) params.maxPrice = maxPrice;
   
   const response = await api.get<Product[]>('/products', { params });
-  return response.data;
+  return response.data.map(sanitizeProduct);
 };
 
 const getProductById = async (id: string) => {
   const response = await api.get<Product>(`/products/${id}`);
-  return response.data;
+  return sanitizeProduct(response.data);
 };
 
 const getCategories = async (): Promise<Category[]> => {
@@ -57,7 +76,7 @@ const getSimilarProducts = async (id: string, categoryId?: string) => {
   const params: any = {};
   if (categoryId) params.categoryId = categoryId;
   const response = await api.get<Product[]>(`/products/${id}/similar`, { params });
-  return response.data;
+  return response.data.map(sanitizeProduct);
 };
 
 const addProduct = async (productData: Partial<Product>) => {

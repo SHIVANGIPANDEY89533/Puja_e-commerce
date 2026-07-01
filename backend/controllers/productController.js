@@ -3,6 +3,26 @@ import Category from '../models/Category.js';
 import { notifyAdmins } from '../services/notificationService.js';
 import mongoose from 'mongoose';
 
+// Helper to resolve or create a category
+const resolveCategoryId = async (categoryInput) => {
+  if (!categoryInput) return null;
+  
+  if (mongoose.Types.ObjectId.isValid(categoryInput)) {
+    const exists = await Category.findById(categoryInput);
+    if (exists) return exists._id.toString();
+  }
+  
+  const trimmed = categoryInput.toString().trim();
+  let catDoc = await Category.findOne({ name: { $regex: new RegExp(`^${trimmed}$`, 'i') } });
+  
+  if (!catDoc) {
+    catDoc = new Category({ name: trimmed });
+    await catDoc.save();
+  }
+  
+  return catDoc._id.toString();
+};
+
 // @desc    Fetch all products with optional filters
 // @route   GET /api/products
 // @access  Public
@@ -20,7 +40,7 @@ const getProducts = async (req, res) => {
     if (req.query.categoryId) {
       const categoryDoc = await Category.findById(req.query.categoryId);
       if (categoryDoc) {
-        filter.category = categoryDoc.name;
+        filter.category = { $in: [categoryDoc.name, categoryDoc._id.toString()] };
       } else {
         // If invalid categoryId, return empty result or match nothing
         filter.category = '__INVALID_CATEGORY__';
@@ -112,7 +132,7 @@ const getSimilarProducts = async (req, res) => {
     if (req.query.categoryId) {
       const categoryDoc = await Category.findById(req.query.categoryId);
       if (categoryDoc) {
-        filter.category = categoryDoc.name;
+        filter.category = { $in: [categoryDoc.name, categoryDoc._id.toString()] };
       }
     } else {
       filter.category = product.category;
@@ -133,9 +153,11 @@ const addProduct = async (req, res) => {
   const { name, category, price, originalPrice, stock, images, description, features } = req.body;
 
   try {
+    const resolvedCategory = await resolveCategoryId(category) || category;
+
     const product = new Product({
       name,
-      category,
+      category: resolvedCategory,
       price,
       originalPrice: originalPrice || price,
       stock,
@@ -165,8 +187,10 @@ const updateProduct = async (req, res) => {
     const product = await Product.findById(req.params.id);
 
     if (product) {
+      if (category) {
+        product.category = await resolveCategoryId(category) || category;
+      }
       product.name = name || product.name;
-      product.category = category || product.category;
       product.price = price !== undefined ? price : product.price;
       product.originalPrice = originalPrice !== undefined ? originalPrice : product.originalPrice;
       product.stock = stock !== undefined ? stock : product.stock;
@@ -277,6 +301,11 @@ const bulkUploadProducts = async (req, res) => {
 
     if (formattedProducts.length === 0) {
       return res.status(400).json({ message: 'No valid products found in the file. Ensure the "name" column exists.' });
+    }
+
+    // Resolve categories for all products
+    for (let i = 0; i < formattedProducts.length; i++) {
+      formattedProducts[i].category = await resolveCategoryId(formattedProducts[i].category) || formattedProducts[i].category;
     }
 
     const createdProducts = await Product.insertMany(formattedProducts);

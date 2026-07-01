@@ -7,7 +7,7 @@ import SearchBar from '@/components/SearchBar';
 import CategorySlider from '@/components/CategorySlider';
 import BannerCarousel from '@/components/BannerCarousel';
 import HorizontalProductList from '@/components/HorizontalProductList';
-import { productService, Product } from '@/services/productService';
+import { productService, Product, setGlobalCategory } from '@/services/productService';
 import { useRouter } from 'expo-router';
 
 export default function HomeScreen() {
@@ -58,10 +58,18 @@ export default function HomeScreen() {
   const murti = products.filter(p => isMatch(p, ['murti', 'idol', 'statue', 'ganesh', 'laxmi', 'shiv']));
   const flowers = products.filter(p => isMatch(p, ['flower', 'garland', 'mala', 'rose', 'marigold']));
 
+  // Fetch categories to match names for View More links
+  const [categories, setCategories] = useState<any[]>([]);
+  useEffect(() => {
+    productService.getCategories().then(setCategories).catch(console.error);
+  }, []);
+
+  const getCategoryIdByKeyword = (keyword: string) => {
+    return categories.find(c => c.name.toLowerCase().includes(keyword))?._id || '';
+  };
+
   // Base UI sections that always render
-  const sections = [
-    { id: 'search', component: <SearchBar onSearch={setSearchQuery} /> },
-  ];
+  const sections: any[] = [];
 
   // Dynamic Product Sections - Only render if products exist for that category
   if (searchQuery.trim() !== '') {
@@ -76,14 +84,13 @@ export default function HomeScreen() {
       component: <HorizontalProductList title={`Search Results for "${searchQuery}"`} data={searchResults} /> 
     });
   } else {
-    sections.push({ id: 'categories', component: <CategorySlider /> });
     sections.push({ id: 'banners', component: <BannerCarousel /> });
-    if (topSelling.length > 0) sections.push({ id: 'top_selling', component: <HorizontalProductList title="Top Selling Puja Items" data={topSelling} onPressViewMore={() => router.push('/explore?sort=rating')} /> });
-    if (dailyPuja.length > 0) sections.push({ id: 'daily_puja', component: <HorizontalProductList title="Daily Puja Samagri" data={dailyPuja} onPressViewMore={() => router.push('/explore?category=Daily%20Puja')} /> });
-    if (havan.length > 0) sections.push({ id: 'havan', component: <HorizontalProductList title="Havan Samagri" data={havan} onPressViewMore={() => router.push('/explore?category=Havan')} /> });
-    if (bartan.length > 0) sections.push({ id: 'bartan', component: <HorizontalProductList title="Puja Bartan" data={bartan} onPressViewMore={() => router.push('/explore?category=Bartan')} /> });
-    if (murti.length > 0) sections.push({ id: 'murti', component: <HorizontalProductList title="Murti Collection" data={murti} onPressViewMore={() => router.push('/explore?category=Murti')} /> });
-    if (flowers.length > 0) sections.push({ id: 'flowers', component: <HorizontalProductList title="Flowers & Garland" data={flowers} onPressViewMore={() => router.push('/explore?category=Flowers')} /> });
+    if (topSelling.length > 0) sections.push({ id: 'top_selling', component: <HorizontalProductList title="Top Selling Puja Items" data={topSelling} /> });
+    if (dailyPuja.length > 0) sections.push({ id: 'daily_puja', component: <HorizontalProductList title="Daily Puja Samagri" data={dailyPuja} /> });
+    if (havan.length > 0) sections.push({ id: 'havan', component: <HorizontalProductList title="Havan Samagri" data={havan} /> });
+    if (bartan.length > 0) sections.push({ id: 'bartan', component: <HorizontalProductList title="Puja Bartan" data={bartan} /> });
+    if (murti.length > 0) sections.push({ id: 'murti', component: <HorizontalProductList title="Murti Collection" data={murti} /> });
+    if (flowers.length > 0) sections.push({ id: 'flowers', component: <HorizontalProductList title="Flowers & Garland" data={flowers} /> });
   }
 
   // Handle network states
@@ -121,7 +128,11 @@ export default function HomeScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <Header />
+      <View style={{ backgroundColor: colors.backgroundElement, paddingBottom: 12 }}>
+        <Header />
+        <SearchBar onSearch={setSearchQuery} />
+        {searchQuery.trim() === '' && <View style={{ marginTop: 8 }}><CategorySlider /></View>}
+      </View>
       <FlatList
         data={sections}
         keyExtractor={(item) => item.id}

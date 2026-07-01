@@ -5,9 +5,10 @@ import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
 import Header from '@/components/Header';
 import SearchBar from '@/components/SearchBar';
-import { productService, Product, Category } from '@/services/productService';
-import { useRouter } from 'expo-router';
+import { productService, Product, Category, getGlobalCategory, setGlobalCategory } from '@/services/productService';
+import { useRouter, useLocalSearchParams, useFocusEffect } from 'expo-router';
 import { useWishlist } from '@/context/WishlistContext';
+import { useCallback } from 'react';
 
 export default function CategoriesScreen() {
   const { width } = useWindowDimensions();
@@ -17,11 +18,25 @@ export default function CategoriesScreen() {
   const { scheme } = useTheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const router = useRouter();
+  const params = useLocalSearchParams();
   const { addToWishlist, removeFromWishlist, isInWishlist, wishlist } = useWishlist();
 
   const [categories, setCategories] = useState<Category[]>([]);
-  const [selectedCategoryId, setSelectedCategoryId] = useState<string>('');
+  const [selectedCategoryId, setSelectedCategoryId] = useState<string>((params.categoryId as string) || '');
   
+  // Listen for category changes from URL params or global state when tab is focused
+  useFocusEffect(
+    useCallback(() => {
+      const globalCat = getGlobalCategory();
+      if (globalCat) {
+        setSelectedCategoryId(globalCat);
+        setGlobalCategory(''); // Consume it
+      } else if (params.categoryId !== undefined) {
+        setSelectedCategoryId(params.categoryId as string);
+      }
+    }, [params.categoryId])
+  );
+
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -170,15 +185,15 @@ export default function CategoriesScreen() {
 
   return (
     <View style={[styles.container, { backgroundColor: colors.background }]}>
+      {renderHeader()}
       <FlatList
-        ListHeaderComponent={renderHeader}
         data={products}
         extraData={wishlist}
         keyExtractor={(item) => item._id}
         renderItem={renderProduct}
         numColumns={numColumns}
         key={numColumns} // Force re-render on orientation change
-        contentContainerStyle={{ paddingBottom: 80 }}
+        contentContainerStyle={{ paddingBottom: 80, paddingTop: 12 }}
         columnWrapperStyle={{ paddingHorizontal: 12, gap: 12 }}
         ListEmptyComponent={
           loading ? (

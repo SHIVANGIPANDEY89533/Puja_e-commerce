@@ -3,7 +3,8 @@ import { View, Text, ScrollView, StyleSheet, TouchableOpacity, Image } from 'rea
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/context/ThemeContext';
 import { categoryService, Category } from '@/services/categoryService';
-import { useRouter } from 'expo-router';
+import { Link, useRouter } from 'expo-router';
+import { setGlobalCategory } from '@/services/productService';
 
 export default function CategorySlider() {
   const { scheme } = useTheme();
@@ -24,10 +25,12 @@ export default function CategorySlider() {
     <View style={[styles.container, { backgroundColor: colors.backgroundElement }]}>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         {categories.map((category) => (
+        <Link href="/categories" asChild key={category._id}>
           <TouchableOpacity 
-            key={category._id} 
             style={styles.item}
-            onPress={() => router.push(`/explore?category=${encodeURIComponent(category.name)}`)}
+            onPress={() => {
+              setGlobalCategory(category._id);
+            }}
           >
             <View style={[styles.iconContainer, { backgroundColor: colors.backgroundSelected }]}>
               {category.icon ? (
@@ -42,6 +45,7 @@ export default function CategorySlider() {
               {category.name}
             </Text>
           </TouchableOpacity>
+        </Link>
         ))}
       </ScrollView>
     </View>

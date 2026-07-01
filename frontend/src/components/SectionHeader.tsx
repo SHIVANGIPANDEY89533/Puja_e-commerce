@@ -3,23 +3,33 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/context/ThemeContext';
+import { Link } from 'expo-router';
 
 interface SectionHeaderProps {
   title: string;
   onPressViewMore?: () => void;
+  href?: any;
 }
 
-export default function SectionHeader({ title, onPressViewMore }: SectionHeaderProps) {
+export default function SectionHeader({ title, onPressViewMore, href }: SectionHeaderProps) {
   const { scheme } = useTheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+
+  const button = (
+    <TouchableOpacity style={StyleSheet.flatten([styles.button, { backgroundColor: colors.primary }])} onPress={onPressViewMore}>
+      <Text style={styles.buttonText}>View More</Text>
+      <Ionicons name="chevron-forward" size={14} color="#fff" />
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.container}>
       <Text style={[styles.title, { color: colors.text }]}>{title}</Text>
-      <TouchableOpacity style={[styles.button, { backgroundColor: colors.primary }]} onPress={onPressViewMore}>
-        <Text style={styles.buttonText}>View More</Text>
-        <Ionicons name="chevron-forward" size={14} color="#fff" />
-      </TouchableOpacity>
+      {href ? (
+        <Link href={href} asChild>
+          {button}
+        </Link>
+      ) : button}
     </View>
   );
 }
