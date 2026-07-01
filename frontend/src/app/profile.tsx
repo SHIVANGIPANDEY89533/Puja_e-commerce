@@ -4,7 +4,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
-import { useRouter } from 'expo-router';
+import { useRouter, Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 
 export default function ProfileScreen() {
@@ -33,60 +33,54 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.menuContainer}>
-          <TouchableOpacity 
-            style={[styles.menuItem, { borderBottomColor: colors.border }]}
-            onPress={() => router.push('/my-orders')}
-          >
-            <Ionicons name="cart" size={24} color={colors.text} />
-            <Text style={[styles.menuText, { color: colors.text }]}>My Orders</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.menuItem, { borderBottomColor: colors.border }]}
-            onPress={() => router.push('/addresses')}
-          >
-            <Ionicons name="location" size={24} color={colors.text} />
-            <Text style={[styles.menuText, { color: colors.text }]}>Saved Addresses</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.menuItem, { borderBottomColor: colors.border }]}
-            onPress={() => router.push('/coupons')}
-          >
-            <Ionicons name="pricetag" size={24} color={colors.text} />
-            <Text style={[styles.menuText, { color: colors.text }]}>My Coupons</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.menuItem, { borderBottomColor: colors.border }]}
-            onPress={() => router.push('/user-settings')}
-          >
-            <Ionicons name="settings" size={24} color={colors.text} />
-            <Text style={[styles.menuText, { color: colors.text }]}>Settings</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
-          </TouchableOpacity>
-
-          <TouchableOpacity 
-            style={[styles.menuItem, { borderBottomColor: colors.border }]}
-            onPress={() => router.push('/support')}
-          >
-            <Ionicons name="help-buoy" size={24} color={colors.text} />
-            <Text style={[styles.menuText, { color: colors.text }]}>Help & Support</Text>
-            <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
-          </TouchableOpacity>
-
-          {user?.role === 'ADMIN' && (
-            <TouchableOpacity 
-              style={[styles.menuItem, { borderBottomColor: colors.border }]}
-              onPress={() => router.push('/(admin)/dashboard')}
-            >
-              <Ionicons name="shield" size={24} color="#E74C3C" />
-              <Text style={[styles.menuText, { color: '#E74C3C', fontWeight: 'bold' }]}>Admin Dashboard</Text>
+          <Link href="/my-orders" asChild>
+            <TouchableOpacity style={StyleSheet.flatten([styles.menuItem, { borderBottomColor: colors.border }])}>
+              <Ionicons name="cart" size={24} color={colors.text} />
+              <Text style={[styles.menuText, { color: colors.text }]}>My Orders</Text>
               <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
             </TouchableOpacity>
+          </Link>
+
+          <Link href="/addresses" asChild>
+            <TouchableOpacity style={StyleSheet.flatten([styles.menuItem, { borderBottomColor: colors.border }])}>
+              <Ionicons name="location" size={24} color={colors.text} />
+              <Text style={[styles.menuText, { color: colors.text }]}>Saved Addresses</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
+            </TouchableOpacity>
+          </Link>
+
+          <Link href="/coupons" asChild>
+            <TouchableOpacity style={StyleSheet.flatten([styles.menuItem, { borderBottomColor: colors.border }])}>
+              <Ionicons name="pricetag" size={24} color={colors.text} />
+              <Text style={[styles.menuText, { color: colors.text }]}>My Coupons</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
+            </TouchableOpacity>
+          </Link>
+
+          <Link href="/user-settings" asChild>
+            <TouchableOpacity style={StyleSheet.flatten([styles.menuItem, { borderBottomColor: colors.border }])}>
+              <Ionicons name="settings" size={24} color={colors.text} />
+              <Text style={[styles.menuText, { color: colors.text }]}>Settings</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
+            </TouchableOpacity>
+          </Link>
+
+          <Link href="/support" asChild>
+            <TouchableOpacity style={StyleSheet.flatten([styles.menuItem, { borderBottomColor: colors.border }])}>
+              <Ionicons name="help-buoy" size={24} color={colors.text} />
+              <Text style={[styles.menuText, { color: colors.text }]}>Help & Support</Text>
+              <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
+            </TouchableOpacity>
+          </Link>
+
+          {user?.role === 'ADMIN' && (
+            <Link href="/(admin)/dashboard" asChild>
+              <TouchableOpacity style={StyleSheet.flatten([styles.menuItem, { borderBottomColor: colors.border }])}>
+                <Ionicons name="shield" size={24} color="#E74C3C" />
+                <Text style={[styles.menuText, { color: '#E74C3C', fontWeight: 'bold' }]}>Admin Dashboard</Text>
+                <Ionicons name="chevron-forward" size={20} color={colors.textSecondary} style={{ marginLeft: 'auto' }} />
+              </TouchableOpacity>
+            </Link>
           )}
 
           <TouchableOpacity style={[styles.menuItem, { borderBottomColor: 'transparent' }]} onPress={handleLogout}>
