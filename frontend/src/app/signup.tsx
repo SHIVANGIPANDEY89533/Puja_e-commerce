@@ -3,7 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator,
 import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
-import { useRouter } from 'expo-router';
+import { useRouter, Link } from 'expo-router';
 import api from '@/services/api';
 
 export default function SignupScreen() {
@@ -129,9 +129,11 @@ export default function SignupScreen() {
 
         <View style={styles.footer}>
           <Text style={{ color: colors.textSecondary }}>Already have an account? </Text>
-          <TouchableOpacity onPress={() => router.replace('/login')}>
-            <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Login</Text>
-          </TouchableOpacity>
+          <Link href="/login" asChild>
+            <TouchableOpacity>
+              <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Login</Text>
+            </TouchableOpacity>
+          </Link>
         </View>
       </View>
     </ScrollView>

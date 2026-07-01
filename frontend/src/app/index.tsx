@@ -110,7 +110,7 @@ export default function HomeScreen() {
       component: (
         <View style={{ padding: 40, alignItems: 'center' }}>
           <Text style={{ color: 'red', textAlign: 'center', marginBottom: 12, fontWeight: 'bold' }}>{error}</Text>
-          <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>Make sure your MERN backend is running on localhost:5000</Text>
+          <Text style={{ color: colors.textSecondary, textAlign: 'center' }}>Make sure your backend is running on https://puja-e-commerce.onrender.com</Text>
         </View>
       )
     });

@@ -22,7 +22,7 @@ const AsyncStorage = {
 };
 import api from '@/services/api';
 
-export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'http://localhost:5000/api';
+export const API_URL = process.env.EXPO_PUBLIC_API_URL || 'https://puja-e-commerce.onrender.com/api';
 
 type User = {
   _id: string;

@@ -23,8 +23,8 @@ export interface Category {
   description?: string;
 }
 
-const API_URL = 'http://localhost:5000/api/products';
-const CATEGORY_API_URL = 'http://localhost:5000/api/categories';
+const API_URL = 'https://puja-e-commerce.onrender.com/api/products';
+const CATEGORY_API_URL = 'https://puja-e-commerce.onrender.com/api/categories';
 
 // Simple global state for passing category filter between tabs
 let globalSelectedCategory = '';

@@ -74,8 +74,6 @@ function TabNavigator() {
             tabBarIcon: ({ color }) => <Ionicons name="person" size={24} color={color} />,
           }}
         />
-        {/* Hide explore if we don't want it, or just omit it */}
-        <Tabs.Screen name="explore" options={{ href: null }} />
         {/* Auth routes */}
         <Tabs.Screen name="login" options={{ href: null }} />
         <Tabs.Screen name="signup" options={{ href: null }} />

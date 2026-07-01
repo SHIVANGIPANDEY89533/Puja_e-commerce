@@ -74,12 +74,17 @@ export default function WishlistScreen() {
               <Ionicons name="heart-outline" size={64} color={colors.textSecondary} />
               <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Your wishlist is empty.</Text>
               <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Explore categories and add your favorite items here.</Text>
-              <TouchableOpacity 
-                style={[styles.exploreBtn, { backgroundColor: colors.primary }]}
-                onPress={() => router.push('/categories')}
-              >
-                <Text style={styles.exploreBtnText}>Explore Products</Text>
-              </TouchableOpacity>
+<TouchableOpacity
+  style={[
+    styles.exploreBtn,
+    { backgroundColor: colors.primary },
+  ]}
+  onPress={() => router.navigate("/(tabs)/categories")}
+>
+  <Text style={styles.exploreBtnText}>
+    Explore Products
+  </Text>
+</TouchableOpacity>
             </View>
           }
         />

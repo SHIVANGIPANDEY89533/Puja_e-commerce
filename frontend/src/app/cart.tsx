@@ -6,7 +6,7 @@ import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
 import Header from '@/components/Header';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, Link } from 'expo-router';
 
 export default function CartScreen() {
   const { cartItems, cartTotal, updateQuantity, removeFromCart, clearCart, loading } = useCart();
@@ -96,12 +96,11 @@ export default function CartScreen() {
             <Ionicons name="cart-outline" size={80} color={colors.textSecondary} />
             <Text style={[styles.emptyText, { color: colors.text }]}>Your Cart is Empty</Text>
             <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Add items to it now.</Text>
-            <TouchableOpacity 
-              style={[styles.shopBtn, { backgroundColor: colors.primary }]}
-              onPress={() => router.push('/categories')}
-            >
-              <Text style={styles.shopBtnText}>Shop Now</Text>
-            </TouchableOpacity>
+            <Link href="/categories" asChild>
+              <TouchableOpacity style={StyleSheet.flatten([styles.shopBtn, { backgroundColor: colors.primary }])}>
+                <Text style={styles.shopBtnText}>Shop Now</Text>
+              </TouchableOpacity>
+            </Link>
           </View>
         ) : (
           <FlatList
