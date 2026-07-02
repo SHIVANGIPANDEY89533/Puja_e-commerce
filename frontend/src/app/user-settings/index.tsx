@@ -71,7 +71,7 @@ export default function SettingsScreen() {
           <Text style={[styles.sectionTitle, { color: colors.primary, marginTop: 24 }]}>ACCOUNT</Text>
           
           <View style={[styles.settingBlock, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
-            <TouchableOpacity style={styles.settingRow}>
+            <TouchableOpacity style={styles.settingRow} onPress={() => router.push('/user-settings/change-password')}>
               <View style={styles.settingInfo}>
                 <Ionicons name="lock-closed" size={24} color={colors.text} style={styles.icon} />
                 <Text style={[styles.settingText, { color: colors.text }]}>Change Password</Text>

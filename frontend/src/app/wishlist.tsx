@@ -3,7 +3,7 @@ import { View, Text, StyleSheet, FlatList, TouchableOpacity, Image, useWindowDim
 import ProtectedRoute from '@/components/ProtectedRoute';
 import { useWishlist } from '@/context/WishlistContext';
 import { Product } from '@/services/productService';
-import { useRouter } from 'expo-router';
+import { useRouter, Link } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
@@ -74,17 +74,7 @@ export default function WishlistScreen() {
               <Ionicons name="heart-outline" size={64} color={colors.textSecondary} />
               <Text style={[styles.emptyText, { color: colors.textSecondary }]}>Your wishlist is empty.</Text>
               <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Explore categories and add your favorite items here.</Text>
-<TouchableOpacity
-  style={[
-    styles.exploreBtn,
-    { backgroundColor: colors.primary },
-  ]}
-  onPress={() => router.navigate("/(tabs)/categories")}
->
-  <Text style={styles.exploreBtnText}>
-    Explore Products
-  </Text>
-</TouchableOpacity>
+
             </View>
           }
         />

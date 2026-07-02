@@ -17,30 +17,63 @@ export default function Header() {
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
 
   const [defaultAddress, setDefaultAddress] = React.useState<Address | null>(null);
+  const [allAddresses, setAllAddresses] = React.useState<Address[]>([]);
+  const [isAddressDropdownVisible, setAddressDropdownVisible] = React.useState(false);
 
   React.useEffect(() => {
     if (user) {
       addressService.getMyAddresses().then(addrs => {
+        setAllAddresses(addrs);
         const def = addrs.find(a => a.isDefault) || addrs[0];
         setDefaultAddress(def || null);
       }).catch(err => console.log('Header address err', err));
     } else {
+      setAllAddresses([]);
       setDefaultAddress(null);
     }
   }, [user, pathname]); // Re-fetch when route changes (e.g. back from adding an address)
 
   return (
     <View style={[styles.container, { backgroundColor: colors.backgroundElement }]}>
-      <View style={styles.content}>
-        <View style={styles.locationContainer}>
-          <Ionicons name="location-sharp" size={20} color={colors.primary} />
-          <View style={styles.textContainer}>
-            <Text style={[styles.deliverTo, { color: colors.textSecondary }]}>Deliver to</Text>
-            <Text style={[styles.address, { color: colors.text }]} numberOfLines={1}>
-              {defaultAddress ? `${defaultAddress.city} ${defaultAddress.pincode}` : 'Select Address'}
-            </Text>
-          </View>
-          <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
+      <View style={[styles.content, { zIndex: 50 }]}>
+        <View style={{ position: 'relative', flex: 1, zIndex: 50 }}>
+          <TouchableOpacity 
+            style={styles.locationContainer}
+            onPress={() => {
+              if (allAddresses.length > 1) {
+                setAddressDropdownVisible(!isAddressDropdownVisible);
+              }
+            }}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="location-sharp" size={20} color={colors.primary} />
+            <View style={styles.textContainer}>
+              <Text style={[styles.deliverTo, { color: colors.textSecondary }]}>Deliver to</Text>
+              <Text style={[styles.address, { color: colors.text }]} numberOfLines={1}>
+                {defaultAddress ? `${defaultAddress.city} ${defaultAddress.pincode}` : 'Select Address'}
+              </Text>
+            </View>
+            {allAddresses.length > 1 && (
+              <Ionicons name="chevron-down" size={16} color={colors.textSecondary} />
+            )}
+          </TouchableOpacity>
+
+          {isAddressDropdownVisible && allAddresses.length > 1 && (
+            <View style={[styles.addressDropdown, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+              {allAddresses.map(addr => (
+                <TouchableOpacity 
+                  key={addr._id} 
+                  style={[styles.addressDropdownItem, defaultAddress?._id === addr._id && { backgroundColor: colors.primary + '15' }]} 
+                  onPress={() => { setDefaultAddress(addr); setAddressDropdownVisible(false); }}
+                >
+                  <Text style={[styles.addressDropdownItemText, { color: defaultAddress?._id === addr._id ? colors.primary : colors.text }]} numberOfLines={1}>
+                    {addr.flat ? addr.flat + ', ' : ''}{addr.area}, {addr.city}
+                  </Text>
+                  {defaultAddress?._id === addr._id && <Ionicons name="checkmark" size={16} color={colors.primary} />}
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
 
         <View style={styles.rightActions}>
@@ -88,6 +121,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     paddingTop: 48, 
     paddingBottom: 8,
+    zIndex: 100,
   },
   content: {
     flexDirection: 'row',
@@ -177,5 +211,33 @@ const styles = StyleSheet.create({
     color: 'white',
     fontSize: 10,
     fontWeight: 'bold',
+  },
+  addressDropdown: {
+    position: 'absolute',
+    top: 48,
+    left: 0,
+    width: 260,
+    borderWidth: 1,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+    padding: 8,
+    zIndex: 100,
+  },
+  addressDropdownItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+    marginBottom: 4,
+  },
+  addressDropdownItemText: {
+    fontSize: 14,
+    flex: 1,
+    marginRight: 8,
   },
 });

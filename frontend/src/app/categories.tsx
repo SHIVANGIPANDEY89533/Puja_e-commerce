@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Image, useWindowDimensions } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Image, useWindowDimensions, Modal } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
@@ -34,6 +34,7 @@ export default function CategoriesScreen() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [sort, setSort] = useState(''); // e.g. 'price_asc', 'price_desc', 'newest', 'rating'
+  const [isSortModalVisible, setSortModalVisible] = useState(false);
 
   // Fetch Categories once
   useEffect(() => {
@@ -116,7 +117,7 @@ export default function CategoriesScreen() {
   };
 
   const renderHeader = () => (
-    <View style={{ backgroundColor: colors.backgroundElement, marginBottom: 8, paddingBottom: 12 }}>
+    <View style={{ backgroundColor: colors.backgroundElement, marginBottom: 8, paddingBottom: 12, zIndex: 100, position: 'relative' }}>
       <Header />
       <SearchBar onSearch={setSearchQuery} />
       
@@ -154,23 +155,33 @@ export default function CategoriesScreen() {
       </View>
 
       {/* Sort & Filter Bar */}
-      <View style={[styles.filterBar, { borderTopColor: colors.border }]}>
+      <View style={[styles.filterBar, { borderTopColor: colors.border, zIndex: 10 }]}>
         <Text style={{ color: colors.textSecondary, flex: 1, fontSize: 12 }}>
           {products.length} {products.length === 1 ? 'Product' : 'Products'} Found
         </Text>
         
-        {/* Simple Sort Dropdown Mocks */}
-        <View style={{ flexDirection: 'row', gap: 12 }}>
-          <TouchableOpacity onPress={() => setSort('newest')} style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Ionicons name="swap-vertical" size={16} color={sort === 'newest' ? colors.primary : colors.text} />
-            <Text style={{ marginLeft: 4, color: sort === 'newest' ? colors.primary : colors.text, fontSize: 12 }}>Newest</Text>
-          </TouchableOpacity>
-          <TouchableOpacity onPress={() => setSort(sort === 'price_asc' ? 'price_desc' : 'price_asc')} style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <Ionicons name="cash-outline" size={16} color={sort?.includes('price') ? colors.primary : colors.text} />
-            <Text style={{ marginLeft: 4, color: sort?.includes('price') ? colors.primary : colors.text, fontSize: 12 }}>
-              Price {sort === 'price_asc' ? '↑' : (sort === 'price_desc' ? '↓' : '')}
+        <View style={{ position: 'relative', zIndex: 20 }}>
+          <TouchableOpacity onPress={() => setSortModalVisible(!isSortModalVisible)} style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text style={{ marginRight: 4, color: sort ? colors.primary : colors.text, fontSize: 12 }}>
+              Sort: {sort === 'price_asc' ? 'Price: Low to High' : sort === 'price_desc' ? 'Price: High to Low' : sort === 'newest' ? 'Newest' : 'Relevant'}
             </Text>
+            <Ionicons name="chevron-down" size={16} color={sort ? colors.primary : colors.text} />
           </TouchableOpacity>
+          {isSortModalVisible && (
+            <View style={[styles.dropdownMenu, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+              {[
+                { id: '', label: 'Relevant' },
+                { id: 'newest', label: 'Newest' },
+                { id: 'price_asc', label: 'Price: Low to High' },
+                { id: 'price_desc', label: 'Price: High to Low' }
+              ].map(option => (
+                <TouchableOpacity key={option.id} style={[styles.dropdownItem, sort === option.id && { backgroundColor: colors.primary + '15' }]} onPress={() => { setSort(option.id); setSortModalVisible(false); }}>
+                  <Text style={[styles.dropdownItemText, { color: sort === option.id ? colors.primary : colors.text }]}>{option.label}</Text>
+                  {sort === option.id && <Ionicons name="checkmark" size={16} color={colors.primary} />}
+                </TouchableOpacity>
+              ))}
+            </View>
+          )}
         </View>
       </View>
     </View>
@@ -290,5 +301,30 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#388E3C',
     fontWeight: 'bold',
+  },
+  dropdownMenu: {
+    position: 'absolute',
+    top: 24,
+    right: 0,
+    width: 180,
+    borderWidth: 1,
+    borderRadius: 8,
+    shadowColor: '#000',
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 4,
+    padding: 8,
+    zIndex: 20,
+  },
+  dropdownItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 10,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  dropdownItemText: {
+    fontSize: 14,
   },
 });

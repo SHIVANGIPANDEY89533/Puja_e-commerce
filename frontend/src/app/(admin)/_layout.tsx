@@ -119,16 +119,16 @@ export default function AdminLayout() {
   const pathname = usePathname();
   const { user, logout } = useAuth();
 
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const isDesktop = width >= 768;
+
   React.useEffect(() => {
-    if (user && user.role !== 'admin') {
+    if (user && user.role?.toUpperCase() !== 'ADMIN') {
       router.replace('/');
     }
   }, [user]);
 
-  if (!user || user.role !== 'admin') return null;
-
-  const isDesktop = width >= 768;
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  if (!user || user.role?.toUpperCase() !== 'ADMIN') return null;
 
   const menuItems = [
     { name: 'Dashboard', path: '/(admin)/dashboard', icon: 'speedometer-outline' as const },

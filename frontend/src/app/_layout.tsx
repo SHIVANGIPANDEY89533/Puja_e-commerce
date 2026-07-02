@@ -15,18 +15,26 @@ function TabNavigator() {
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const { user } = useAuth();
   const { cartCount } = useCart();
-  const isAdmin = user?.role === 'admin';
+  const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
 
   return (
     <NavThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
       <AnimatedSplashOverlay />
       <Tabs
+        backBehavior="history"
         screenOptions={{
           tabBarActiveTintColor: colors.primary,
           tabBarInactiveTintColor: colors.textSecondary,
           tabBarStyle: {
             backgroundColor: colors.backgroundElement,
             borderTopColor: colors.border,
+            height: 60,
+            paddingBottom: 8,
+            paddingTop: 8,
+          },
+          tabBarLabelStyle: {
+            fontSize: 11,
+            marginTop: 4,
           },
           headerShown: false,
         }}>
@@ -54,6 +62,7 @@ function TabNavigator() {
         <Tabs.Screen
           name="cart"
           options={{
+            href: null,
             title: 'Cart',
             tabBarIcon: ({ color }) => (
               <View>
@@ -93,6 +102,7 @@ function TabNavigator() {
         <Tabs.Screen name="addresses/add" options={{ href: null }} />
         <Tabs.Screen name="coupons/index" options={{ href: null }} />
         <Tabs.Screen name="user-settings/index" options={{ href: null }} />
+        <Tabs.Screen name="user-settings/change-password" options={{ href: null }} />
         
         {/* Admin routes (Only visible to admin, and hides tab bar when active) */}
         <Tabs.Screen 

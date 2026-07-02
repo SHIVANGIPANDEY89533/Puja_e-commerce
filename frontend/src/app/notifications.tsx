@@ -30,12 +30,19 @@ export default function NotificationsScreen() {
     }
   };
 
-  const markAsRead = async (id: string, relatedTicket?: string) => {
+  const markAsRead = async (item: Notification) => {
     try {
-      await notificationService.markAsRead(id);
-      setNotifications(prev => prev.map(n => n._id === id ? { ...n, isRead: true } : n));
-      if (relatedTicket) {
-        router.push(`/support/${relatedTicket}`);
+      if (!item.isRead) {
+        await notificationService.markAsRead(item._id);
+        setNotifications(prev => prev.map(n => n._id === item._id ? { ...n, isRead: true } : n));
+      }
+      
+      if (item.resourceType === 'Ticket' && item.relatedId) {
+        router.push(`/support/${item.relatedId}`);
+      } else if (item.resourceType === 'Order' && item.relatedId) {
+        router.push(`/my-orders/${item.relatedId}`);
+      } else if (item.resourceType === 'Product' && item.relatedId) {
+        router.push(`/product/${item.relatedId}`);
       }
     } catch (err) {
       console.error(err);
@@ -60,7 +67,7 @@ export default function NotificationsScreen() {
           borderColor: item.isRead ? colors.border : colors.primary + '50'
         }
       ]}
-      onPress={() => markAsRead(item._id, item.relatedTicket)}
+      onPress={() => markAsRead(item)}
     >
       <View style={[styles.iconBox, { backgroundColor: item.isRead ? colors.border : colors.primary + '20' }]}>
         <Ionicons name="notifications" size={20} color={item.isRead ? colors.textSecondary : colors.primary} />

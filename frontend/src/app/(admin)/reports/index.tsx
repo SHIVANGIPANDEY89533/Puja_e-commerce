@@ -5,6 +5,12 @@ import { Colors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import api from '@/services/api';
+import { BarChart } from 'react-native-chart-kit';
+import { Dimensions, LogBox } from 'react-native';
+
+LogBox.ignoreLogs(['Unknown event handler property `onPressIn`']);
+
+const { width } = Dimensions.get('window');
 
 export default function ReportsScreen() {
   const { scheme } = useTheme();
@@ -109,26 +115,36 @@ export default function ReportsScreen() {
             </View>
 
             <View style={styles.row}>
-              {/* Sales Chart Data (Table Fallback) */}
+              {/* Sales Chart Data */}
               <View style={[styles.section, { flex: 2, marginRight: 16, backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
                 <Text style={[styles.sectionTitle, { color: colors.text }]}>Sales Trend ({range})</Text>
                 {data.salesChartData.length === 0 ? (
                   <Text style={{ color: colors.textSecondary, marginTop: 20 }}>No sales data for this period.</Text>
                 ) : (
-                  <View style={styles.table}>
-                    <View style={[styles.tableHeader, { borderBottomColor: colors.border }]}>
-                      <Text style={[styles.tableCell, { color: colors.textSecondary, fontWeight: 'bold' }]}>Date</Text>
-                      <Text style={[styles.tableCell, { color: colors.textSecondary, fontWeight: 'bold' }]}>Orders</Text>
-                      <Text style={[styles.tableCell, { color: colors.textSecondary, fontWeight: 'bold' }]}>Revenue (₹)</Text>
-                    </View>
-                    {data.salesChartData.map((row: any, i: number) => (
-                      <View key={i} style={[styles.tableRow, { borderBottomColor: colors.border }]}>
-                        <Text style={[styles.tableCell, { color: colors.text }]}>{row._id}</Text>
-                        <Text style={[styles.tableCell, { color: colors.text }]}>{row.count}</Text>
-                        <Text style={[styles.tableCell, { color: colors.text, fontWeight: 'bold' }]}>{row.sales.toFixed(2)}</Text>
-                      </View>
-                    ))}
-                  </View>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 16 }}>
+                    <BarChart
+                      data={{
+                        labels: data.salesChartData.map((d: any) => d._id),
+                        datasets: [{ data: data.salesChartData.map((d: any) => d.sales) }]
+                      }}
+                      width={Math.max(width > 600 ? width - 500 : width - 70, data.salesChartData.length * 60)}
+                      height={240}
+                      yAxisLabel="₹"
+                      yAxisSuffix=""
+                      chartConfig={{
+                        backgroundColor: colors.backgroundElement,
+                        backgroundGradientFrom: colors.backgroundElement,
+                        backgroundGradientTo: colors.backgroundElement,
+                        decimalPlaces: 0,
+                        color: (opacity = 1) => colors.primary,
+                        labelColor: (opacity = 1) => colors.textSecondary,
+                        style: { borderRadius: 16 },
+                        barPercentage: 0.6,
+                      }}
+                      style={{ borderRadius: 16 }}
+                      showValuesOnTopOfBars
+                    />
+                  </ScrollView>
                 )}
               </View>
 
@@ -201,5 +217,38 @@ const styles = StyleSheet.create({
   table: { width: '100%' },
   tableHeader: { flexDirection: 'row', paddingVertical: 12, borderBottomWidth: 1 },
   tableRow: { flexDirection: 'row', paddingVertical: 12, borderBottomWidth: 1 },
-  tableCell: { flex: 1, fontSize: 14 }
+  tableCell: { flex: 1, fontSize: 14 },
+  chartContainer: {
+    flexDirection: 'row',
+    alignItems: 'flex-end',
+    height: 180,
+    paddingTop: 10,
+    paddingHorizontal: 8,
+  },
+  chartBarWrapper: {
+    alignItems: 'center',
+    width: 60,
+    marginRight: 12,
+  },
+  chartBarBg: {
+    width: 24,
+    height: 120,
+    borderRadius: 12,
+    justifyContent: 'flex-end',
+    marginBottom: 8,
+    overflow: 'hidden',
+  },
+  chartBarFill: {
+    width: '100%',
+    borderRadius: 12,
+  },
+  chartLabel: {
+    fontSize: 11,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+  chartValue: {
+    fontSize: 10,
+    fontWeight: 'bold',
+  }
 });

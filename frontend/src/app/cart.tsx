@@ -96,11 +96,6 @@ export default function CartScreen() {
             <Ionicons name="cart-outline" size={80} color={colors.textSecondary} />
             <Text style={[styles.emptyText, { color: colors.text }]}>Your Cart is Empty</Text>
             <Text style={[styles.emptySubtext, { color: colors.textSecondary }]}>Add items to it now.</Text>
-            <Link href="/categories" asChild>
-              <TouchableOpacity style={StyleSheet.flatten([styles.shopBtn, { backgroundColor: colors.primary }])}>
-                <Text style={styles.shopBtnText}>Shop Now</Text>
-              </TouchableOpacity>
-            </Link>
           </View>
         ) : (
           <FlatList

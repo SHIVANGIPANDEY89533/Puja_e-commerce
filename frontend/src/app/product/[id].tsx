@@ -19,7 +19,7 @@ export default function ProductDetailScreen() {
   const { id } = useLocalSearchParams();
   const router = useRouter();
   const { addToWishlist, removeFromWishlist, isInWishlist } = useWishlist();
-  const { addToCart, isInCart, removeFromCart } = useCart();
+  const { addToCart, isInCart, removeFromCart, cartCount } = useCart();
 
   const [product, setProduct] = useState<Product | null>(null);
   const [similarProducts, setSimilarProducts] = useState<Product[]>([]);
@@ -113,8 +113,13 @@ export default function ProductDetailScreen() {
           <Ionicons name="arrow-back" size={24} color={colors.text} />
         </TouchableOpacity>
         <Text style={{ fontSize: 16, fontWeight: 'bold', color: colors.text }}>Product Details</Text>
-        <TouchableOpacity onPress={() => router.push('/cart')} style={{ padding: 8 }}>
+        <TouchableOpacity onPress={() => router.push('/cart')} style={{ padding: 8, position: 'relative' }}>
           <Ionicons name="cart-outline" size={24} color={colors.text} />
+          {cartCount > 0 && (
+            <View style={[styles.badge, { backgroundColor: colors.primary }]}>
+              <Text style={styles.badgeText}>{cartCount}</Text>
+            </View>
+          )}
         </TouchableOpacity>
       </View>
 
@@ -378,5 +383,22 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontWeight: 'bold',
     fontSize: 14,
+  },
+  badge: {
+    position: 'absolute',
+    right: 2,
+    top: 2,
+    borderRadius: 9,
+    width: 18,
+    height: 18,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1.5,
+    borderColor: '#fff',
+  },
+  badgeText: {
+    color: 'white',
+    fontSize: 10,
+    fontWeight: 'bold',
   },
 });
