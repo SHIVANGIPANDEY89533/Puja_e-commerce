@@ -2,6 +2,7 @@ import { DarkTheme, DefaultTheme, ThemeProvider as NavThemeProvider } from 'expo
 import { Tabs } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { View, Text, StyleSheet } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { Colors } from '@/constants/theme';
 import { AnimatedSplashOverlay } from '@/components/animated-icon';
@@ -16,6 +17,7 @@ function TabNavigator() {
   const { user } = useAuth();
   const { cartCount } = useCart();
   const isAdmin = user?.role?.toUpperCase() === 'ADMIN';
+  const insets = useSafeAreaInsets();
 
   return (
     <NavThemeProvider value={scheme === 'dark' ? DarkTheme : DefaultTheme}>
@@ -28,8 +30,8 @@ function TabNavigator() {
           tabBarStyle: {
             backgroundColor: colors.backgroundElement,
             borderTopColor: colors.border,
-            height: 60,
-            paddingBottom: 8,
+            height: (Platform.OS === 'android' ? 66 : 60) + insets.bottom,
+            paddingBottom: (Platform.OS === 'android' ? 14 : 8) + insets.bottom,
             paddingTop: 8,
           },
           tabBarLabelStyle: {
