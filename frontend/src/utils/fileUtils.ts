@@ -43,6 +43,7 @@ export const parseUploadedFile = async (uri: string, name: string, mimeType?: st
 
 import * as FileSystem from 'expo-file-system';
 import * as Sharing from 'expo-sharing';
+import * as Print from 'expo-print';
 
 const triggerDownload = async (blob: Blob, filename: string) => {
   if (Platform.OS === 'web') {
@@ -97,30 +98,63 @@ export const exportToExcel = (data: any[], filename: string = 'export.xlsx') => 
 };
 
 export const exportToPDF = async (data: any[], columns: string[], filename: string = 'export.pdf') => {
-  if (Platform.OS !== 'web') {
-    Alert.alert('Export Info', 'PDF Export is only supported on Web currently.');
-    return;
-  }
+  if (Platform.OS === 'web') {
+    try {
+      // @ts-ignore
+      const { jsPDF } = await import('jspdf/dist/jspdf.es.min.js');
+      const autoTable = (await import('jspdf-autotable')).default;
+      
+      const doc = new jsPDF();
+      
+      const tableData = data.map(row => columns.map(col => row[col] !== undefined ? String(row[col]) : ''));
+      
+      autoTable(doc, {
+        head: [columns],
+        body: tableData,
+        styles: { fontSize: 8 },
+        headStyles: { fillColor: [41, 128, 185] },
+      });
 
-  try {
-    // @ts-ignore
-    const { jsPDF } = await import('jspdf/dist/jspdf.es.min.js');
-    const autoTable = (await import('jspdf-autotable')).default;
-    
-    const doc = new jsPDF();
-    
-    const tableData = data.map(row => columns.map(col => row[col] !== undefined ? String(row[col]) : ''));
-    
-    autoTable(doc, {
-      head: [columns],
-      body: tableData,
-      styles: { fontSize: 8 },
-      headStyles: { fillColor: [41, 128, 185] },
-    });
+      doc.save(filename);
+    } catch (err) {
+      console.error("Failed to generate PDF on web", err);
+    }
+  } else {
+    try {
+      // Generate HTML for the table for Mobile PDF generation
+      const thead = `<tr>${columns.map(col => `<th style="border: 1px solid #ddd; padding: 8px; background-color: #2980b9; color: white; text-transform: capitalize;">${col}</th>`).join('')}</tr>`;
+      const tbody = data.map(row => `<tr>${columns.map(col => `<td style="border: 1px solid #ddd; padding: 8px;">${row[col] !== undefined ? String(row[col]) : ''}</td>`).join('')}</tr>`).join('');
+      
+      const html = `
+        <html>
+          <head>
+            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
+            <style>
+              body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20px; }
+              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+              h1 { color: #333; text-align: center; }
+            </style>
+          </head>
+          <body>
+            <h1>Report</h1>
+            <table>
+              <thead>${thead}</thead>
+              <tbody>${tbody}</tbody>
+            </table>
+          </body>
+        </html>
+      `;
 
-    doc.save(filename);
-  } catch (err) {
-    console.error("Failed to generate PDF", err);
+      const { uri } = await Print.printToFileAsync({ html });
+      if (await Sharing.isAvailableAsync()) {
+        await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
+      } else {
+        Alert.alert("Error", "Sharing is not available on this device");
+      }
+    } catch (err) {
+      console.error("Failed to generate PDF on mobile", err);
+      Alert.alert('Error', 'Failed to generate PDF on mobile.');
+    }
   }
 };
 
