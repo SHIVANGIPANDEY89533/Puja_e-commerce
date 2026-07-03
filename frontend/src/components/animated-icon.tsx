@@ -33,11 +33,10 @@ export function AnimatedSplashOverlay() {
 
   return (
     <Animated.View
+      pointerEvents="none"
       entering={splashKeyframe.duration(DURATION).withCallback((finished) => {
         'worklet';
-        if (finished) {
-          scheduleOnRN(setVisible, false);
-        }
+        scheduleOnRN(setVisible, false);
       })}
       style={styles.backgroundSolidColor}
     />

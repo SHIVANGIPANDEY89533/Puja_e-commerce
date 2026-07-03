@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, TextInput, TouchableOpacity, ScrollView, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native';
 import { useRouter, useLocalSearchParams } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +13,7 @@ export default function AdminTicketDetailsScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   
   const { scheme } = useTheme();
+  const insets = useSafeAreaInsets();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const scrollViewRef = useRef<ScrollView>(null);
 
@@ -208,7 +210,7 @@ export default function AdminTicketDetailsScreen() {
           })}
         </ScrollView>
 
-        <View style={[styles.inputContainer, { backgroundColor: colors.backgroundElement, borderTopColor: colors.border }]}>
+        <View style={[styles.inputContainer, { backgroundColor: colors.backgroundElement, borderTopColor: colors.border, paddingBottom: Math.max(12, insets.bottom) }]}>
           <TextInput
             style={[styles.input, { color: colors.text, backgroundColor: colors.background }]}
             placeholder="Type your reply to customer..."

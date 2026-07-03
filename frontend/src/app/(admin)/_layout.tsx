@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, useWindowDimensions, ScrollView, Modal, SafeAreaView } from 'react-native';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Slot, useRouter, usePathname } from 'expo-router';
 import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
@@ -115,6 +116,7 @@ export default function AdminLayout() {
   const { scheme, toggleTheme } = useTheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const { width } = useWindowDimensions();
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const pathname = usePathname();
   const { user, logout } = useAuth();
@@ -154,7 +156,11 @@ export default function AdminLayout() {
     router.replace('/');
   };
 
-  const currentMenu = menuItems.find(m => pathname.startsWith(m.path)) || menuItems[0];
+  const normalizedPath = pathname.replace(/^\/\(admin\)/, '');
+  const currentMenu = menuItems.find(m => {
+    const mPath = m.path.replace(/^\/\(admin\)/, '');
+    return normalizedPath.startsWith(mPath);
+  }) || menuItems[0];
 
   const SidebarContent = () => (
     <View style={{ flex: 1 }}>
@@ -224,9 +230,17 @@ export default function AdminLayout() {
       )}
 
       {/* Main Content Area */}
-      <View style={styles.mainContent}>
+      <View style={[styles.mainContent, { width: isDesktop ? width - 250 : width, overflow: 'hidden' }]}>
         {/* Top Header */}
-        <View style={[styles.topHeader, { backgroundColor: colors.backgroundElement, borderBottomColor: colors.border }]}>
+        <View style={[
+          styles.topHeader, 
+          { 
+            backgroundColor: colors.backgroundElement, 
+            borderBottomColor: colors.border,
+            paddingTop: Math.max(insets.top, 8),
+            height: 64 + Math.max(insets.top, 0)
+          }
+        ]}>
           <View style={styles.headerLeft}>
             {!isDesktop && (
               <TouchableOpacity onPress={() => setMobileMenuOpen(true)} style={styles.hamburger}>
@@ -330,6 +344,8 @@ const styles = StyleSheet.create({
   headerLeft: {
     flexDirection: 'row',
     alignItems: 'center',
+    flex: 1,
+    marginRight: 8,
   },
   hamburger: {
     marginRight: 16,
@@ -337,6 +353,7 @@ const styles = StyleSheet.create({
   headerTitle: {
     fontSize: 20,
     fontWeight: 'bold',
+    flexShrink: 1,
   },
   headerRight: {
     flexDirection: 'row',

@@ -198,8 +198,11 @@ const updateTicketStatus = asyncHandler(async (req, res) => {
   if (statusChanged) {
     await Notification.create({
       user: ticket.user,
+      type: 'Info',
+      title: 'Ticket Status Updated',
       message: `The status of your ticket "${ticket.subject}" has been updated to ${status}.`,
-      relatedTicket: ticket._id
+      relatedId: ticket._id,
+      resourceType: 'Ticket'
     });
   }
 

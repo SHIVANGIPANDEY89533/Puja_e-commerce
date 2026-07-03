@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Platform } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Platform, Alert } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
@@ -102,7 +102,11 @@ export default function CheckoutScreen() {
         
         await paymentService.verifyPayment(orderData);
         await clearCart();
-        router.replace('/my-orders');
+        Alert.alert(
+          'Order Placed! 🎉', 
+          'Your Cash on Delivery order has been placed successfully.',
+          [{ text: 'OK', onPress: () => router.replace('/my-orders') }]
+        );
       } else {
         const order = await paymentService.createOrder({
           items: cartItems.map(item => ({
@@ -151,7 +155,11 @@ export default function CheckoutScreen() {
       await paymentService.verifyPayment(orderData);
       await clearCart();
       setRazorpayOrder(null);
-      router.replace('/my-orders');
+      Alert.alert(
+        'Payment Successful! 🎉',
+        'Your order has been placed successfully.',
+        [{ text: 'OK', onPress: () => router.replace('/my-orders') }]
+      );
     } catch (err: any) {
       alert('Payment verification failed');
       setRazorpayOrder(null);

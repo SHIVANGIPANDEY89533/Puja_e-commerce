@@ -275,10 +275,10 @@ export default function CategoryManagementScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, padding: 16 },
-  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20 },
-  title: { fontSize: 24, fontWeight: 'bold' },
-  addBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 16, paddingVertical: 10, borderRadius: 8, gap: 8 },
-  addBtnText: { color: '#fff', fontWeight: 'bold' },
+  header: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 20, flexWrap: 'wrap', gap: 12 },
+  title: { fontSize: 22, fontWeight: 'bold', flexShrink: 1 },
+  addBtn: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8, gap: 4 },
+  addBtnText: { color: '#fff', fontWeight: 'bold', fontSize: 13 },
   
   card: { flexDirection: 'row', alignItems: 'center', padding: 12, borderRadius: 12, borderWidth: 1, marginBottom: 12 },
   orderControls: { paddingRight: 12, alignItems: 'center', justifyContent: 'center' },

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, ScrollView, KeyboardAvoidingView, Platform } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
@@ -49,8 +49,12 @@ export default function SignupScreen() {
   };
 
   return (
-    <ScrollView style={[styles.container, { backgroundColor: colors.background }]} contentContainerStyle={styles.scrollContent}>
-      <View style={styles.formContainer}>
+    <KeyboardAvoidingView 
+      style={{ flex: 1, backgroundColor: colors.background }} 
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+        <View style={styles.formContainer}>
         <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Sign up to get started</Text>
 
@@ -129,14 +133,13 @@ export default function SignupScreen() {
 
         <View style={styles.footer}>
           <Text style={{ color: colors.textSecondary }}>Already have an account? </Text>
-          <Link href="/login" asChild>
-            <TouchableOpacity>
-              <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Login</Text>
-            </TouchableOpacity>
-          </Link>
+          <TouchableOpacity onPress={() => router.push('/login')}>
+            <Text style={{ color: colors.primary, fontWeight: 'bold', padding: 5 }}>Login</Text>
+          </TouchableOpacity>
         </View>
-      </View>
-    </ScrollView>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -169,11 +172,18 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
+  inputContainer: {
+    marginBottom: 16,
+  },
+  label: {
+    fontSize: 14,
+    fontWeight: '600',
+    marginBottom: 8,
+  },
   input: {
     borderWidth: 1,
     borderRadius: 8,
     padding: 16,
-    marginBottom: 16,
     fontSize: 16,
   },
   signupBtn: {

@@ -4,7 +4,8 @@ import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
 import { orderService, Order } from '@/services/orderService';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useRouter, useFocusEffect } from 'expo-router';
+import { useCallback } from 'react';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
 export default function MyOrdersScreen() {
@@ -15,9 +16,11 @@ export default function MyOrdersScreen() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    fetchOrders();
-  }, []);
+  useFocusEffect(
+    useCallback(() => {
+      fetchOrders();
+    }, [])
+  );
 
   const fetchOrders = async () => {
     try {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Switch, Platform } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TextInput, TouchableOpacity, ActivityIndicator, Switch, Platform, useWindowDimensions } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,8 @@ export default function SettingsScreen() {
   
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const { width } = useWindowDimensions();
+  const isDesktop = width >= 768;
   const [settings, setSettings] = useState<any>({
     storeName: '', storeLogo: '', contactEmail: '', phoneNumber: '', whatsappNumber: '',
     storeAddress: '', deliveryCharges: 0, freeDeliveryThreshold: 0, taxGst: 0, currency: 'INR',
@@ -125,31 +127,31 @@ export default function SettingsScreen() {
           {/* Business Settings */}
           <View style={[styles.section, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
             <SectionHeader title="Business Settings" icon="briefcase-outline" />
-            <View style={styles.row}>
-              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>Delivery Charges</Text>
-                <TextInput style={[styles.input, { color: colors.text, borderColor: colors.border }]} value={String(settings.deliveryCharges)} onChangeText={(t) => updateSetting('deliveryCharges', Number(t))} keyboardType="numeric" />
+            <View style={[styles.row, { flexDirection: isDesktop ? 'row' : 'column' }]}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: isDesktop ? 16 : 0 }]}>
+                <Text style={[styles.label, { color: colors.text }]}>Delivery Charges</Text>
+                <TextInput style={[styles.input, { color: colors.text, borderColor: colors.border }]} value={settings.deliveryCharges?.toString()} onChangeText={(v) => updateSetting('deliveryCharges', Number(v) || 0)} keyboardType="numeric" />
               </View>
-              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>Free Delivery Above</Text>
-                <TextInput style={[styles.input, { color: colors.text, borderColor: colors.border }]} value={String(settings.freeDeliveryThreshold)} onChangeText={(t) => updateSetting('freeDeliveryThreshold', Number(t))} keyboardType="numeric" />
+              <View style={[styles.inputGroup, { flex: 1 }]}>
+                <Text style={[styles.label, { color: colors.text }]}>Free Delivery Above</Text>
+                <TextInput style={[styles.input, { color: colors.text, borderColor: colors.border }]} value={settings.freeDeliveryThreshold?.toString()} onChangeText={(v) => updateSetting('freeDeliveryThreshold', Number(v) || 0)} keyboardType="numeric" />
               </View>
             </View>
-            <View style={styles.row}>
-              <View style={[styles.inputGroup, { flex: 1, marginRight: 8 }]}>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>Tax (GST %)</Text>
-                <TextInput style={[styles.input, { color: colors.text, borderColor: colors.border }]} value={String(settings.taxGst)} onChangeText={(t) => updateSetting('taxGst', Number(t))} keyboardType="numeric" />
+            <View style={[styles.row, { flexDirection: isDesktop ? 'row' : 'column' }]}>
+              <View style={[styles.inputGroup, { flex: 1, marginRight: isDesktop ? 16 : 0 }]}>
+                <Text style={[styles.label, { color: colors.text }]}>Tax (GST %)</Text>
+                <TextInput style={[styles.input, { color: colors.text, borderColor: colors.border }]} value={settings.taxGst?.toString()} onChangeText={(v) => updateSetting('taxGst', Number(v) || 0)} keyboardType="numeric" />
               </View>
-              <View style={[styles.inputGroup, { flex: 1, marginLeft: 8 }]}>
-                <Text style={[styles.label, { color: colors.textSecondary }]}>Currency</Text>
-                <TextInput style={[styles.input, { color: colors.text, borderColor: colors.border }]} value={settings.currency} onChangeText={(t) => updateSetting('currency', t)} />
+              <View style={[styles.inputGroup, { flex: 1 }]}>
+                <Text style={[styles.label, { color: colors.text }]}>Currency</Text>
+                <TextInput style={[styles.input, { color: colors.text, borderColor: colors.border }]} value={settings.currency} onChangeText={(v) => updateSetting('currency', v)} />
               </View>
             </View>
           </View>
 
           {/* Payment & Application */}
-          <View style={styles.row}>
-            <View style={[styles.section, { flex: 1, marginRight: 8, backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+          <View style={[styles.row, { flexDirection: isDesktop ? 'row' : 'column' }]}>
+            <View style={[styles.section, { flex: 1, marginRight: isDesktop ? 8 : 0, backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
               <SectionHeader title="Payment Gateway" icon="card-outline" />
               <View style={styles.switchRow}>
                 <Text style={{ color: colors.text }}>Razorpay</Text>
@@ -165,7 +167,7 @@ export default function SettingsScreen() {
               </View>
             </View>
 
-            <View style={[styles.section, { flex: 1, marginLeft: 8, backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+            <View style={[styles.section, { flex: 1, marginLeft: isDesktop ? 8 : 0, backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
               <SectionHeader title="Application" icon="settings-outline" />
               <View style={styles.switchRow}>
                 <Text style={{ color: colors.text }}>Email Notifications</Text>

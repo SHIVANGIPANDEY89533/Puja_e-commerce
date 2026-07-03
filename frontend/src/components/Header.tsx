@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Platform, Image, useWindowDimensions } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { Colors } from '@/constants/theme';
 import { useTheme } from '@/context/ThemeContext';
@@ -15,6 +15,8 @@ export default function Header() {
   const router = useRouter();
   const pathname = usePathname();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const { width } = useWindowDimensions();
+  const isMobile = width < 600;
 
   const [defaultAddress, setDefaultAddress] = React.useState<Address | null>(null);
   const [allAddresses, setAllAddresses] = React.useState<Address[]>([]);
@@ -148,19 +150,19 @@ const styles = StyleSheet.create({
   rightActions: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
+    gap: 6,
   },
   themeToggle: {
-    padding: 4,
+    padding: 2,
   },
   authButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
+    gap: 4,
   },
   loginBtn: {
     paddingVertical: 6,
-    paddingHorizontal: 10,
+    paddingHorizontal: 4,
   },
   loginText: {
     fontWeight: '600',
@@ -168,7 +170,7 @@ const styles = StyleSheet.create({
   },
   signupBtn: {
     paddingVertical: 6,
-    paddingHorizontal: 12,
+    paddingHorizontal: 8,
     borderRadius: 16,
   },
   signupText: {

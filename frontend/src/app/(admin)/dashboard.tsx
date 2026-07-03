@@ -5,7 +5,7 @@ import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, Link } from 'expo-router';
-import { LineChart } from 'react-native-chart-kit';
+import DashboardLineChart from '@/components/charts/DashboardLineChart';
 import { LogBox } from 'react-native';
 
 LogBox.ignoreLogs(['Unknown event handler property `onPressIn`']);
@@ -76,30 +76,7 @@ export default function AdminDashboard() {
         {/* Weekly Revenue Chart */}
         <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 32 }]}>Weekly Revenue Overview</Text>
         <View style={[styles.chartCard, { backgroundColor: colors.backgroundElement, borderColor: colors.border, padding: 16, alignItems: 'center' }]}>
-          <LineChart
-            data={{
-              labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
-              datasets: [{ data: [12000, 45000, 28000, 80000, 99000, 43000, 50000] }]
-            }}
-            width={width > 600 ? width - 320 : width - 72}
-            height={220}
-            yAxisLabel="₹"
-            yAxisSuffix="k"
-            yAxisInterval={1}
-            chartConfig={{
-              backgroundColor: colors.backgroundElement,
-              backgroundGradientFrom: colors.backgroundElement,
-              backgroundGradientTo: colors.backgroundElement,
-              decimalPlaces: 0,
-              color: (opacity = 1) => `rgba(${parseInt(colors.primary.slice(1,3),16)}, ${parseInt(colors.primary.slice(3,5),16)}, ${parseInt(colors.primary.slice(5,7),16)}, ${opacity})`,
-              labelColor: (opacity = 1) => colors.textSecondary,
-              style: { borderRadius: 16 },
-              propsForDots: { r: '4', strokeWidth: '2', stroke: colors.primary }
-            }}
-            bezier
-            style={{ borderRadius: 16 }}
-            formatYLabel={(val) => (parseInt(val) / 1000).toString()}
-          />
+          <DashboardLineChart />
         </View>
 
         {/* Quick Actions */}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
@@ -43,8 +43,12 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={[styles.container, { backgroundColor: colors.background }]}>
-      <View style={styles.formContainer}>
+    <KeyboardAvoidingView 
+      style={{ flex: 1 }} 
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+    >
+      <ScrollView contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}>
+        <View style={styles.formContainer}>
         <Text style={[styles.title, { color: colors.text }]}>Welcome Back</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Login to your account</Text>
 
@@ -83,20 +87,19 @@ export default function LoginScreen() {
 
         <View style={styles.footer}>
           <Text style={{ color: colors.textSecondary }}>Don't have an account? </Text>
-          <Link href="/signup" asChild>
-            <TouchableOpacity>
-              <Text style={{ color: colors.primary, fontWeight: 'bold' }}>Sign Up</Text>
-            </TouchableOpacity>
-          </Link>
+          <TouchableOpacity onPress={() => router.push('/signup')}>
+            <Text style={{ color: colors.primary, fontWeight: 'bold', padding: 5 }}>Sign Up</Text>
+          </TouchableOpacity>
         </View>
-      </View>
-    </View>
+        </View>
+      </ScrollView>
+    </KeyboardAvoidingView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
+    flexGrow: 1,
     justifyContent: 'center',
     padding: 24,
   },

@@ -7,17 +7,24 @@ import { Ionicons } from '@expo/vector-icons';
 import { notificationService, Notification } from '@/services/notificationService';
 import ProtectedRoute from '@/components/ProtectedRoute';
 
+import { useAuth } from '@/context/AuthContext';
+
 export default function NotificationsScreen() {
   const router = useRouter();
   const { scheme } = useTheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const { user } = useAuth();
 
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    fetchNotifications();
-  }, []);
+    if (user) {
+      fetchNotifications();
+    } else {
+      setLoading(false);
+    }
+  }, [user]);
 
   const fetchNotifications = async () => {
     try {

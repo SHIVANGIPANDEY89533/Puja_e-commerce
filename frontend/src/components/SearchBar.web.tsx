@@ -5,10 +5,7 @@ import { Colors } from '@/constants/theme';
 import { useTheme } from '@/context/ThemeContext';
 import { useRouter } from 'expo-router';
 
-import {
-  ExpoSpeechRecognitionModule,
-  useSpeechRecognitionEvent,
-} from "expo-speech-recognition";
+// Native speech recognition is excluded on web
 
 export default function SearchBar({ onSearch }: { onSearch?: (query: string) => void }) {
   const { scheme } = useTheme();
@@ -18,36 +15,8 @@ export default function SearchBar({ onSearch }: { onSearch?: (query: string) => 
   const [searchText, setSearchText] = useState('');
   const [isListening, setIsListening] = useState(false);
 
-  useSpeechRecognitionEvent("start", () => setIsListening(true));
-  useSpeechRecognitionEvent("end", () => setIsListening(false));
-  useSpeechRecognitionEvent("result", (event) => {
-    const transcript = event.results[0]?.transcript || '';
-    setSearchText(transcript);
-    if (onSearch) onSearch(transcript);
-  });
-  useSpeechRecognitionEvent("error", (event) => {
-    console.log("error code:", event.error, "error message:", event.message);
-    if (event.error !== 'no-speech') {
-      alert('Voice recognition error: ' + event.message);
-    }
-    setIsListening(false);
-  });
-
-  const handleMicPress = async () => {
-    if (isListening) {
-      ExpoSpeechRecognitionModule.stop();
-      return;
-    }
-    const result = await ExpoSpeechRecognitionModule.requestPermissionsAsync();
-    if (!result.granted) {
-      alert("Microphone permissions not granted");
-      return;
-    }
-    ExpoSpeechRecognitionModule.start({
-      lang: "en-IN",
-      interimResults: false,
-      continuous: false,
-    });
+  const handleMicPress = () => {
+    alert("Voice search is only available on the mobile app.");
   };
 
   const handleSubmit = () => {

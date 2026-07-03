@@ -21,7 +21,7 @@ export default function ProtectedRoute({ children, adminOnly = false }: { childr
     } else {
       setIsReady(true);
     }
-  }, [user, isLoading, segments, adminOnly]);
+  }, [user, isLoading, adminOnly]);
 
   if (!isReady || isLoading) {
     return (

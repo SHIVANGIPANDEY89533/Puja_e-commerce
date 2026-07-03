@@ -5,7 +5,7 @@ import { Colors } from '@/constants/theme';
 import { Ionicons } from '@expo/vector-icons';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import api from '@/services/api';
-import { BarChart } from 'react-native-chart-kit';
+import ReportsBarChart from '@/components/charts/ReportsBarChart';
 import { Dimensions, LogBox } from 'react-native';
 
 LogBox.ignoreLogs(['Unknown event handler property `onPressIn`']);
@@ -121,30 +121,7 @@ export default function ReportsScreen() {
                 {data.salesChartData.length === 0 ? (
                   <Text style={{ color: colors.textSecondary, marginTop: 20 }}>No sales data for this period.</Text>
                 ) : (
-                  <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginTop: 16 }}>
-                    <BarChart
-                      data={{
-                        labels: data.salesChartData.map((d: any) => d._id),
-                        datasets: [{ data: data.salesChartData.map((d: any) => d.sales) }]
-                      }}
-                      width={Math.max(width > 600 ? width - 500 : width - 70, data.salesChartData.length * 60)}
-                      height={240}
-                      yAxisLabel="₹"
-                      yAxisSuffix=""
-                      chartConfig={{
-                        backgroundColor: colors.backgroundElement,
-                        backgroundGradientFrom: colors.backgroundElement,
-                        backgroundGradientTo: colors.backgroundElement,
-                        decimalPlaces: 0,
-                        color: (opacity = 1) => colors.primary,
-                        labelColor: (opacity = 1) => colors.textSecondary,
-                        style: { borderRadius: 16 },
-                        barPercentage: 0.6,
-                      }}
-                      style={{ borderRadius: 16 }}
-                      showValuesOnTopOfBars
-                    />
-                  </ScrollView>
+                  <ReportsBarChart data={data} />
                 )}
               </View>
 

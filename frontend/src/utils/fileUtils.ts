@@ -1,8 +1,5 @@
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
-// @ts-ignore
-import { jsPDF } from 'jspdf/dist/jspdf.es.min.js';
-import autoTable from 'jspdf-autotable';
 import { Platform, Alert } from 'react-native';
 
 export const parseUploadedFile = async (uri: string, name: string, mimeType?: string): Promise<any[]> => {
@@ -44,7 +41,10 @@ export const parseUploadedFile = async (uri: string, name: string, mimeType?: st
   });
 };
 
-const triggerDownload = (blob: Blob, filename: string) => {
+import * as FileSystem from 'expo-file-system';
+import * as Sharing from 'expo-sharing';
+
+const triggerDownload = async (blob: Blob, filename: string) => {
   if (Platform.OS === 'web') {
     const url = window.URL.createObjectURL(blob);
     const a = document.createElement('a');
@@ -55,7 +55,28 @@ const triggerDownload = (blob: Blob, filename: string) => {
     window.URL.revokeObjectURL(url);
     document.body.removeChild(a);
   } else {
-    Alert.alert('Export Successful', `Data is ready. Mobile sharing not implemented in this demo.`);
+    try {
+      const fr = new FileReader();
+      fr.onload = async () => {
+        const base64 = (fr.result as string).split(',')[1];
+        // @ts-ignore
+        const fileUri = `${FileSystem.documentDirectory}${filename}`;
+        
+        await FileSystem.writeAsStringAsync(fileUri, base64, { 
+          encoding: FileSystem.EncodingType.Base64 
+        });
+        
+        if (await Sharing.isAvailableAsync()) {
+          await Sharing.shareAsync(fileUri);
+        } else {
+          Alert.alert("Error", "Sharing is not available on this device");
+        }
+      };
+      fr.readAsDataURL(blob);
+    } catch (err) {
+      console.error(err);
+      Alert.alert("Error", "Failed to save file on device.");
+    }
   }
 };
 
@@ -75,22 +96,31 @@ export const exportToExcel = (data: any[], filename: string = 'export.xlsx') => 
   triggerDownload(blob, filename);
 };
 
-export const exportToPDF = (data: any[], columns: string[], filename: string = 'export.pdf') => {
-  const doc = new jsPDF();
-  
-  const tableData = data.map(row => columns.map(col => row[col] !== undefined ? String(row[col]) : ''));
-  
-  autoTable(doc, {
-    head: [columns],
-    body: tableData,
-    styles: { fontSize: 8 },
-    headStyles: { fillColor: [41, 128, 185] },
-  });
+export const exportToPDF = async (data: any[], columns: string[], filename: string = 'export.pdf') => {
+  if (Platform.OS !== 'web') {
+    Alert.alert('Export Info', 'PDF Export is only supported on Web currently.');
+    return;
+  }
 
-  if (Platform.OS === 'web') {
+  try {
+    // @ts-ignore
+    const { jsPDF } = await import('jspdf/dist/jspdf.es.min.js');
+    const autoTable = (await import('jspdf-autotable')).default;
+    
+    const doc = new jsPDF();
+    
+    const tableData = data.map(row => columns.map(col => row[col] !== undefined ? String(row[col]) : ''));
+    
+    autoTable(doc, {
+      head: [columns],
+      body: tableData,
+      styles: { fontSize: 8 },
+      headStyles: { fillColor: [41, 128, 185] },
+    });
+
     doc.save(filename);
-  } else {
-    Alert.alert('Export Successful', 'Mobile sharing not implemented in this demo.');
+  } catch (err) {
+    console.error("Failed to generate PDF", err);
   }
 };
 
