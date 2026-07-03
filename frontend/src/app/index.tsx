@@ -102,12 +102,41 @@ export default function HomeScreen() {
       component: <HorizontalProductList title={`Search Results for "${searchQuery}"`} data={searchResults} /> 
     });
   } else if (selectedCategoryId) {
+    const selectedCat = categories.find(c => c._id === selectedCategoryId);
+    const categoryName = selectedCat ? selectedCat.name : 
+                         selectedCategoryId.startsWith('keyword_') ? selectedCategoryId.replace('keyword_', '') : 'Category';
+    const catNameLower = categoryName.toLowerCase();
+
     const categoryProducts = products.filter(p => {
       const pCat = p.category as any;
-      return pCat === selectedCategoryId || pCat?._id === selectedCategoryId;
+      // Exact ID or Name match
+      if (pCat === selectedCategoryId || pCat?._id === selectedCategoryId) return true;
+      if (typeof pCat === 'string' && pCat.toLowerCase() === catNameLower) return true;
+      if (pCat?.name && pCat.name.toLowerCase() === catNameLower) return true;
+      
+      // Keyword fallback to match the horizontal list items exactly
+      if (catNameLower.includes('daily') || catNameLower.includes('samagri')) {
+        return isMatch(p, ['daily puja', 'daily-puja', 'samagri', 'diya', 'cotton wick']);
+      }
+      if (catNameLower.includes('havan') || catNameLower.includes('hawan')) {
+        return isMatch(p, ['havan', 'hawan', 'wood', 'samidha']);
+      }
+      if (catNameLower.includes('bartan') || catNameLower.includes('brass')) {
+        return isMatch(p, ['bartan', 'brass', 'copper', 'thali', 'kalash', 'lota']);
+      }
+      if (catNameLower.includes('murti') || catNameLower.includes('idol')) {
+        return isMatch(p, ['murti', 'idol', 'statue', 'ganesh', 'laxmi', 'shiv']);
+      }
+      if (catNameLower.includes('flower') || catNameLower.includes('mala')) {
+        return isMatch(p, ['flower', 'garland', 'mala', 'rose', 'marigold']);
+      }
+      if (catNameLower.includes('top')) {
+        return products.indexOf(p) < 5;
+      }
+      
+      // Generic fallback
+      return isMatch(p, [catNameLower]);
     });
-    const selectedCat = categories.find(c => c._id === selectedCategoryId);
-    const categoryName = selectedCat ? selectedCat.name : 'Category';
 
     sections.push({
       id: 'category_results',
@@ -119,10 +148,10 @@ export default function HomeScreen() {
           {categoryProducts.length === 0 ? (
             <Text style={{ color: colors.textSecondary }}>No products found in this category.</Text>
           ) : (
-            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12, justifyContent: 'space-between' }}>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', justifyContent: 'space-between' }}>
               {categoryProducts.map(p => (
-                <View key={p._id} style={{ width: '48%', marginBottom: 12 }}>
-                  <ProductCard product={p} />
+                <View key={p._id} style={{ width: '48%', marginBottom: 16 }}>
+                  <ProductCard product={p} fullWidth />
                 </View>
               ))}
             </View>
@@ -132,12 +161,12 @@ export default function HomeScreen() {
     });
   } else {
     sections.push({ id: 'banners', component: <BannerCarousel /> });
-    if (topSelling.length > 0) sections.push({ id: 'top_selling', component: <HorizontalProductList title="Top Selling Puja Items" data={topSelling} onPressViewMore={() => setSelectedCategoryId(getCategoryIdByKeyword('top') || categories[0]?._id)} /> });
-    if (dailyPuja.length > 0) sections.push({ id: 'daily_puja', component: <HorizontalProductList title="Daily Puja Samagri" data={dailyPuja.slice(0, 5)} onPressViewMore={() => setSelectedCategoryId(getCategoryIdByKeyword('daily') || getCategoryIdByKeyword('samagri'))} /> });
-    if (havan.length > 0) sections.push({ id: 'havan', component: <HorizontalProductList title="Havan Samagri" data={havan.slice(0, 5)} onPressViewMore={() => setSelectedCategoryId(getCategoryIdByKeyword('havan') || getCategoryIdByKeyword('hawan'))} /> });
-    if (bartan.length > 0) sections.push({ id: 'bartan', component: <HorizontalProductList title="Puja Bartan" data={bartan.slice(0, 5)} onPressViewMore={() => setSelectedCategoryId(getCategoryIdByKeyword('bartan') || getCategoryIdByKeyword('brass'))} /> });
-    if (murti.length > 0) sections.push({ id: 'murti', component: <HorizontalProductList title="Murti Collection" data={murti.slice(0, 5)} onPressViewMore={() => setSelectedCategoryId(getCategoryIdByKeyword('murti') || getCategoryIdByKeyword('idol'))} /> });
-    if (flowers.length > 0) sections.push({ id: 'flowers', component: <HorizontalProductList title="Flowers & Garland" data={flowers.slice(0, 5)} onPressViewMore={() => setSelectedCategoryId(getCategoryIdByKeyword('flower') || getCategoryIdByKeyword('mala'))} /> });
+    if (topSelling.length > 0) sections.push({ id: 'top_selling', component: <HorizontalProductList title="Top Selling Puja Items" data={topSelling} onPressViewMore={() => setSelectedCategoryId('keyword_top selling')} /> });
+    if (dailyPuja.length > 0) sections.push({ id: 'daily_puja', component: <HorizontalProductList title="Daily Puja Samagri" data={dailyPuja.slice(0, 5)} onPressViewMore={() => setSelectedCategoryId(getCategoryIdByKeyword('daily') || getCategoryIdByKeyword('samagri') || 'keyword_daily puja samagri')} /> });
+    if (havan.length > 0) sections.push({ id: 'havan', component: <HorizontalProductList title="Havan Samagri" data={havan.slice(0, 5)} onPressViewMore={() => setSelectedCategoryId(getCategoryIdByKeyword('havan') || getCategoryIdByKeyword('hawan') || 'keyword_havan samagri')} /> });
+    if (bartan.length > 0) sections.push({ id: 'bartan', component: <HorizontalProductList title="Puja Bartan" data={bartan.slice(0, 5)} onPressViewMore={() => setSelectedCategoryId(getCategoryIdByKeyword('bartan') || getCategoryIdByKeyword('brass') || 'keyword_puja bartan')} /> });
+    if (murti.length > 0) sections.push({ id: 'murti', component: <HorizontalProductList title="Murti Collection" data={murti.slice(0, 5)} onPressViewMore={() => setSelectedCategoryId(getCategoryIdByKeyword('murti') || getCategoryIdByKeyword('idol') || 'keyword_murti collection')} /> });
+    if (flowers.length > 0) sections.push({ id: 'flowers', component: <HorizontalProductList title="Flowers & Garland" data={flowers.slice(0, 5)} onPressViewMore={() => setSelectedCategoryId(getCategoryIdByKeyword('flower') || getCategoryIdByKeyword('mala') || 'keyword_flowers & garland')} /> });
   }
 
   // Handle network states

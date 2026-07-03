@@ -10,9 +10,10 @@ import { useCart } from '@/context/CartContext';
 
 interface ProductCardProps {
   product: Product;
+  fullWidth?: boolean;
 }
 
-export default function ProductCard({ product }: ProductCardProps) {
+export default function ProductCard({ product, fullWidth = false }: ProductCardProps) {
   const { scheme } = useTheme();
   const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
   const router = useRouter();
@@ -44,7 +45,11 @@ export default function ProductCard({ product }: ProductCardProps) {
 
   return (
     <TouchableOpacity 
-      style={[styles.card, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}
+      style={[
+        styles.card, 
+        fullWidth ? { width: '100%' } : { width: 140 },
+        { backgroundColor: colors.backgroundElement, borderColor: colors.border }
+      ]}
       onPress={() => router.push(`/product/${product._id}`)}
       activeOpacity={0.8}
     >
@@ -88,7 +93,7 @@ export default function ProductCard({ product }: ProductCardProps) {
 
 const styles = StyleSheet.create({
   card: {
-    width: 140,
+    borderRadius: 8,
     borderRadius: 8,
     borderWidth: 1,
     overflow: 'hidden',

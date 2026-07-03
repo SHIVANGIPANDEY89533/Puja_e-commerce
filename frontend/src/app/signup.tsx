@@ -50,74 +50,59 @@ export default function SignupScreen() {
 
   return (
     <KeyboardAvoidingView 
-      style={{ flex: 1, backgroundColor: colors.background }} 
+      style={{ flex: 1 }} 
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
-      <ScrollView style={styles.container} contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={[styles.container, { backgroundColor: colors.background }]}>
         <View style={styles.formContainer}>
         <Text style={[styles.title, { color: colors.text }]}>Create Account</Text>
         <Text style={[styles.subtitle, { color: colors.textSecondary }]}>Sign up to get started</Text>
 
         {error ? <Text style={styles.errorText}>{error}</Text> : null}
 
-        <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: colors.text }]}>Full Name</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
-            placeholder="John Doe"
-            placeholderTextColor={colors.textSecondary}
-            value={name}
-            onChangeText={setName}
-          />
-        </View>
+        <TextInput
+          style={[styles.input, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
+          placeholder="Full Name (e.g. John Doe)"
+          placeholderTextColor={colors.textSecondary}
+          value={name}
+          onChangeText={setName}
+        />
 
-        <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: colors.text }]}>Email</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
-            placeholder="john@example.com"
-            placeholderTextColor={colors.textSecondary}
-            value={email}
-            onChangeText={setEmail}
-            keyboardType="email-address"
-            autoCapitalize="none"
-          />
-        </View>
+        <TextInput
+          style={[styles.input, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
+          placeholder="Email Address"
+          placeholderTextColor={colors.textSecondary}
+          value={email}
+          onChangeText={setEmail}
+          keyboardType="email-address"
+          autoCapitalize="none"
+        />
 
-        <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: colors.text }]}>Mobile Number</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
-            placeholder="9876543210"
-            placeholderTextColor={colors.textSecondary}
-            value={mobile}
-            onChangeText={setMobile}
-            keyboardType="phone-pad"
-          />
-        </View>
+        <TextInput
+          style={[styles.input, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
+          placeholder="Mobile Number"
+          placeholderTextColor={colors.textSecondary}
+          value={mobile}
+          onChangeText={setMobile}
+          keyboardType="phone-pad"
+        />
 
-        <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: colors.text }]}>Address</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
-            placeholder="123 Street, City"
-            placeholderTextColor={colors.textSecondary}
-            value={address}
-            onChangeText={setAddress}
-          />
-        </View>
+        <TextInput
+          style={[styles.input, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
+          placeholder="Complete Address"
+          placeholderTextColor={colors.textSecondary}
+          value={address}
+          onChangeText={setAddress}
+        />
 
-        <View style={styles.inputContainer}>
-          <Text style={[styles.label, { color: colors.text }]}>Password</Text>
-          <TextInput
-            style={[styles.input, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
-            placeholder="••••••••"
-            placeholderTextColor={colors.textSecondary}
-            value={password}
-            onChangeText={setPassword}
-            secureTextEntry
-          />
-        </View>
+        <TextInput
+          style={[styles.input, { backgroundColor: colors.backgroundElement, color: colors.text, borderColor: colors.border }]}
+          placeholder="Password"
+          placeholderTextColor={colors.textSecondary}
+          value={password}
+          onChangeText={setPassword}
+          secureTextEntry
+        />
 
         <TouchableOpacity 
           style={[styles.signupBtn, { backgroundColor: colors.primary }]}
@@ -145,10 +130,6 @@ export default function SignupScreen() {
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  scrollContent: {
     flexGrow: 1,
     justifyContent: 'center',
     padding: 24,
@@ -172,18 +153,11 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     textAlign: 'center',
   },
-  inputContainer: {
-    marginBottom: 16,
-  },
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    marginBottom: 8,
-  },
   input: {
     borderWidth: 1,
     borderRadius: 8,
     padding: 16,
+    marginBottom: 16,
     fontSize: 16,
   },
   signupBtn: {
