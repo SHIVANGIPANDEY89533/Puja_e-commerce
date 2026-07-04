@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator } from 'react-native';
+import { View, Text, StyleSheet, FlatList, TouchableOpacity, ActivityIndicator, Image } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
 import { orderService, Order } from '@/services/orderService';
@@ -85,15 +85,30 @@ export default function MyOrdersScreen() {
               >
                 <View style={styles.orderHeader}>
                   <Text style={[styles.orderId, { color: colors.text }]}>Order #{item._id.substring(0, 8).toUpperCase()}</Text>
-                  <Text style={[styles.orderDate, { color: colors.textSecondary }]}>
-                    {new Date(item.createdAt).toLocaleDateString()}
-                  </Text>
+                  <View style={{ alignItems: 'flex-end' }}>
+                    <Text style={[styles.orderDate, { color: colors.textSecondary }]}>
+                      {new Date(item.createdAt).toLocaleDateString()}
+                    </Text>
+                    <Text style={{ fontSize: 12, color: colors.textSecondary, marginTop: 2 }}>
+                      {new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </Text>
+                  </View>
                 </View>
 
-                <View style={styles.orderDetails}>
-                  <Text style={[styles.itemCount, { color: colors.textSecondary }]}>
-                    {item.items.length} {item.items.length === 1 ? 'Item' : 'Items'}
-                  </Text>
+                <View style={styles.productPreviewContainer}>
+                  {item.items && item.items.length > 0 && (
+                    <>
+                      <Image source={{ uri: item.items[0].image }} style={styles.productImage} />
+                      <View style={styles.productPreviewInfo}>
+                        <Text style={[styles.productName, { color: colors.text }]} numberOfLines={1}>
+                          {item.items[0].name}
+                        </Text>
+                        <Text style={[styles.itemCount, { color: colors.textSecondary }]}>
+                          {item.items.length === 1 ? '1 Item' : `+ ${item.items.length - 1} more items`}
+                        </Text>
+                      </View>
+                    </>
+                  )}
                   <Text style={[styles.orderTotal, { color: colors.text }]}>
                     ₹{item.total}
                   </Text>
@@ -156,17 +171,38 @@ const styles = StyleSheet.create({
   },
   orderDate: {
     fontSize: 14,
+    fontWeight: '500',
   },
-  orderDetails: {
+  productPreviewContainer: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: 16,
+    paddingVertical: 12,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: 'rgba(0,0,0,0.05)',
+  },
+  productImage: {
+    width: 50,
+    height: 50,
+    borderRadius: 8,
+    marginRight: 12,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  productPreviewInfo: {
+    flex: 1,
+    marginRight: 12,
+  },
+  productName: {
+    fontSize: 16,
+    fontWeight: 'bold',
+    marginBottom: 4,
   },
   itemCount: {
-    fontSize: 14,
+    fontSize: 13,
   },
   orderTotal: {
-    fontSize: 16,
+    fontSize: 18,
     fontWeight: 'bold',
   },
   statusContainer: {

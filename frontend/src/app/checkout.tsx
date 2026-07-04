@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Platform, Alert } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, TextInput, ActivityIndicator, Platform, Alert, Modal, Image } from 'react-native';
 import { useRouter, useFocusEffect } from 'expo-router';
 import { useCart } from '@/context/CartContext';
 import { useAuth } from '@/context/AuthContext';
@@ -29,6 +29,8 @@ export default function CheckoutScreen() {
   
   const [loading, setLoading] = useState(false);
   const [razorpayOrder, setRazorpayOrder] = useState<any>(null);
+  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [placedOrderSummary, setPlacedOrderSummary] = useState<any>(null);
 
   const deliveryCharge = cartTotal > 500 || cartItems.length === 0 ? 0 : 50;
   const discountAmount = 0;
@@ -80,6 +82,13 @@ export default function CheckoutScreen() {
     const addressSnapshot = getFullAddressString(selectedAddr);
 
     try {
+      const orderSummaryInfo = {
+        total: grandTotal,
+        itemCount: cartItems.length,
+        firstItemImage: cartItems.length > 0 ? cartItems[0].product.images[0] : null,
+        firstItemName: cartItems.length > 0 ? cartItems[0].product.name : null
+      };
+
       if (paymentMethod === 'Cash on Delivery') {
         const orderData = {
           razorpayOrderId: '',
@@ -102,11 +111,8 @@ export default function CheckoutScreen() {
         
         await paymentService.verifyPayment(orderData);
         await clearCart();
-        Alert.alert(
-          'Order Placed! 🎉', 
-          'Your Cash on Delivery order has been placed successfully.',
-          [{ text: 'OK', onPress: () => router.replace('/my-orders') }]
-        );
+        setPlacedOrderSummary(orderSummaryInfo);
+        setShowSuccessModal(true);
       } else {
         const order = await paymentService.createOrder({
           items: cartItems.map(item => ({
@@ -155,11 +161,13 @@ export default function CheckoutScreen() {
       await paymentService.verifyPayment(orderData);
       await clearCart();
       setRazorpayOrder(null);
-      Alert.alert(
-        'Payment Successful! 🎉',
-        'Your order has been placed successfully.',
-        [{ text: 'OK', onPress: () => router.replace('/my-orders') }]
-      );
+      setPlacedOrderSummary({
+        total: grandTotal,
+        itemCount: cartItems.length,
+        firstItemImage: cartItems.length > 0 ? cartItems[0].product.images[0] : null,
+        firstItemName: cartItems.length > 0 ? cartItems[0].product.name : null
+      });
+      setShowSuccessModal(true);
     } catch (err: any) {
       alert('Payment verification failed');
       setRazorpayOrder(null);
@@ -368,6 +376,52 @@ export default function CheckoutScreen() {
           )}
 
         </ScrollView>
+
+        <Modal visible={showSuccessModal} transparent={true} animationType="fade">
+          <View style={styles.modalOverlay}>
+            <View style={[styles.successModal, { backgroundColor: colors.backgroundElement }]}>
+              <View style={styles.successIconContainer}>
+                <Ionicons name="checkmark-circle" size={80} color="#4CAF50" />
+              </View>
+              <Text style={[styles.successTitle, { color: colors.text }]}>Order Placed! 🎉</Text>
+              
+              {placedOrderSummary && (
+                <View style={[styles.summaryBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                  <View style={styles.summaryItemRow}>
+                    {placedOrderSummary.firstItemImage && (
+                      <Image source={{ uri: placedOrderSummary.firstItemImage }} style={styles.summaryImage} />
+                    )}
+                    <View style={styles.summaryTextCol}>
+                      <Text style={[styles.summaryName, { color: colors.text }]} numberOfLines={1}>
+                        {placedOrderSummary.firstItemName}
+                      </Text>
+                      <Text style={{ color: colors.textSecondary, fontSize: 13 }}>
+                        {placedOrderSummary.itemCount === 1 ? '1 Item' : `+ ${placedOrderSummary.itemCount - 1} more items`}
+                      </Text>
+                    </View>
+                  </View>
+                  <View style={styles.summaryTotalRow}>
+                    <Text style={{ color: colors.textSecondary, fontSize: 14 }}>Order Total</Text>
+                    <Text style={{ color: colors.text, fontSize: 16, fontWeight: 'bold' }}>₹{placedOrderSummary.total}</Text>
+                  </View>
+                </View>
+              )}
+
+              <Text style={[styles.successMessage, { color: colors.textSecondary }]}>
+                Thank you for your purchase. Your order has been placed successfully.
+              </Text>
+              <TouchableOpacity 
+                style={styles.shopMoreBtn}
+                onPress={() => {
+                  setShowSuccessModal(false);
+                  router.replace('/');
+                }}
+              >
+                <Text style={styles.shopMoreBtnText}>Shop More</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Modal>
       </View>
     </ProtectedRoute>
   );
@@ -425,6 +479,88 @@ const styles = StyleSheet.create({
   addressSnapshot: {
     padding: 12,
     borderRadius: 8,
+    marginBottom: 8,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
+  },
+  successModal: {
+    width: '100%',
+    maxWidth: 340,
+    borderRadius: 20,
+    padding: 24,
+    alignItems: 'center',
+    elevation: 10,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+  },
+  successIconContainer: {
     marginBottom: 16,
+  },
+  successTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 8,
+    textAlign: 'center',
+  },
+  successMessage: {
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 24,
+    lineHeight: 20,
+  },
+  shopMoreBtn: {
+    backgroundColor: '#FF6F00',
+    paddingVertical: 14,
+    paddingHorizontal: 32,
+    borderRadius: 30,
+    width: '100%',
+    alignItems: 'center',
+  },
+  shopMoreBtnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: 'bold',
+  },
+  summaryBox: {
+    width: '100%',
+    borderRadius: 12,
+    borderWidth: 1,
+    padding: 12,
+    marginBottom: 16,
+  },
+  summaryItemRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(0,0,0,0.05)',
+    paddingBottom: 12,
+    marginBottom: 12,
+  },
+  summaryImage: {
+    width: 40,
+    height: 40,
+    borderRadius: 6,
+    marginRight: 12,
+    backgroundColor: 'rgba(0,0,0,0.05)',
+  },
+  summaryTextCol: {
+    flex: 1,
+  },
+  summaryName: {
+    fontSize: 14,
+    fontWeight: 'bold',
+    marginBottom: 2,
+  },
+  summaryTotalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   }
 });

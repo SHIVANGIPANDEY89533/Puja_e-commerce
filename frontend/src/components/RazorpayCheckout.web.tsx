@@ -1,5 +1,7 @@
-import React, { useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, ActivityIndicator, StyleSheet, Text } from 'react-native';
+import { Colors } from '@/constants/theme';
+import { useTheme } from '@/context/ThemeContext';
 
 interface RazorpayCheckoutProps {
   orderId: string;
@@ -14,76 +16,87 @@ interface RazorpayCheckoutProps {
 }
 
 export default function RazorpayCheckout({
-  orderId,
-  amount,
-  currency,
-  publicKey,
-  userEmail,
-  userPhone,
-  onSuccess,
-  onError,
-  onCancel
+  orderId, amount, currency, publicKey, userEmail, userPhone, onSuccess, onError, onCancel
 }: RazorpayCheckoutProps) {
-  
-  // For Expo Web: Inject Razorpay Checkout script dynamically
+  const { scheme } = useTheme();
+  const colors = Colors[scheme === 'dark' ? 'dark' : 'light'];
+  const scriptLoaded = useRef(false);
+  const rzpInstance = useRef<any>(null);
+
   useEffect(() => {
-    const loadRazorpay = () => {
-      const script = document.createElement('script');
-      script.src = 'https://checkout.razorpay.com/v1/checkout.js';
-      script.async = true;
-      script.onload = () => {
-        // @ts-ignore
-        if (!window.Razorpay) {
-          onError('Razorpay SDK failed to load');
-          return;
-        }
-        const options = {
-          key: publicKey,
-          currency: currency,
-          name: 'Puja Samagri Store',
-          description: 'Order Payment',
-          order_id: orderId,
-          handler: function (response: any) {
-            onSuccess(response.razorpay_payment_id, response.razorpay_signature);
-          },
-          prefill: {
-            email: userEmail,
-            contact: userPhone
-          },
-          theme: {
-            color: '#FB641B'
-          },
-          modal: {
-            ondismiss: function() {
-              onCancel();
-            }
+    if (scriptLoaded.current) return;
+    scriptLoaded.current = true;
+
+    const script = document.createElement('script');
+    script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+    script.async = true;
+    script.onload = () => {
+      if (!(window as any).Razorpay) {
+        onError(new Error('Razorpay SDK failed to load'));
+        return;
+      }
+
+      const options = {
+        key: publicKey,
+        amount: amount.toString(),
+        currency: currency,
+        name: 'Puja Samagri',
+        description: 'Order Payment',
+        order_id: orderId,
+        handler: function (response: any) {
+          onSuccess(response.razorpay_payment_id, response.razorpay_signature);
+        },
+        prefill: {
+          email: userEmail,
+          contact: userPhone
+        },
+        theme: {
+          color: colors.primary
+        },
+        modal: {
+          ondismiss: function() {
+            onCancel();
           }
-        };
-        // @ts-ignore
-        const rzp = new window.Razorpay(options);
-        rzp.on('payment.failed', function (response: any) {
-          onError(response.error);
-        });
-        rzp.open();
+        }
       };
-      document.body.appendChild(script);
+
+      rzpInstance.current = new (window as any).Razorpay(options);
+      rzpInstance.current.on('payment.failed', function (response: any) {
+        onError(response.error);
+      });
+      rzpInstance.current.open();
+    };
+    
+    script.onerror = () => {
+      onError(new Error('Failed to load Razorpay SDK'));
     };
 
-    loadRazorpay();
+    document.body.appendChild(script);
+
+    return () => {
+      if (rzpInstance.current) {
+        // Try to close modal if unmounted
+      }
+    };
   }, []);
 
   return (
-    <View style={styles.centerContainer}>
-      <ActivityIndicator size="large" color="#FB641B" />
+    <View style={[styles.container, { backgroundColor: colors.background }]}>
+      <ActivityIndicator size="large" color={colors.primary} />
+      <Text style={[styles.text, { color: colors.textSecondary }]}>Securely opening Razorpay...</Text>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  centerContainer: {
+  container: {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: '#fff'
+    padding: 20
+  },
+  text: {
+    marginTop: 16,
+    fontSize: 16
   }
 });

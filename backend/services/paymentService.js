@@ -27,7 +27,7 @@ export const createRazorpayOrder = async (amount, receiptId) => {
   }
 
   const options = {
-    amount: amount * 100, // amount in the smallest currency unit (paise)
+    amount: Math.round(amount * 100), // amount in the smallest currency unit (paise)
     currency: 'INR',
     receipt: receiptId
   };

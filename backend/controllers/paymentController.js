@@ -48,7 +48,8 @@ const createPaymentOrder = asyncHandler(async (req, res) => {
   const finalAmount = Math.max(0, calculatedTotal - discountAmount);
 
   // 3. Create Razorpay Order
-  const receiptId = `receipt_${req.user._id}_${Date.now()}`;
+  // receipt max length for Razorpay is 40 characters
+  const receiptId = `rcpt_${req.user._id.toString().substring(18)}_${Date.now()}`;
   const razorpayOrder = await createRazorpayOrder(finalAmount, receiptId);
 
   res.json({
