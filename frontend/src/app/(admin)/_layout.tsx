@@ -9,6 +9,7 @@ import { useAuth } from '@/context/AuthContext';
 import { notificationService, Notification } from '@/services/notificationService';
 
 const NotificationBell = ({ colors, router }: { colors: any, router: any }) => {
+  const { width } = useWindowDimensions();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [showDropdown, setShowDropdown] = useState(false);
 
@@ -75,7 +76,15 @@ const NotificationBell = ({ colors, router }: { colors: any, router: any }) => {
       </TouchableOpacity>
 
       {showDropdown && (
-        <View style={[styles.notificationDropdown, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
+        <View style={[
+          styles.notificationDropdown, 
+          { 
+            backgroundColor: colors.backgroundElement, 
+            borderColor: colors.border,
+            width: Math.min(320, width - 40),
+            right: -20
+          }
+        ]}>
           <View style={[styles.notifHeader, { borderBottomColor: colors.border }]}>
             <Text style={[styles.notifTitle, { color: colors.text }]}>Notifications</Text>
             <View style={{ flexDirection: 'row', gap: 10 }}>
@@ -187,7 +196,7 @@ export default function AdminLayout() {
           );
         })}
       </ScrollView>
-      <View style={[styles.sidebarFooter, { borderTopColor: colors.border }]}>
+      <View style={[styles.sidebarFooter, { borderTopColor: colors.border, paddingBottom: Math.max(insets.bottom, 20) }]}>
         <TouchableOpacity style={[styles.logoutButton, { marginBottom: 20 }]} onPress={() => {
           router.replace('/');
           if (!isDesktop) setMobileMenuOpen(false);
@@ -217,14 +226,14 @@ export default function AdminLayout() {
         <Modal visible={mobileMenuOpen} animationType="slide" transparent={true}>
           <View style={styles.modalOverlay}>
             <View style={[styles.mobileSidebar, { backgroundColor: colors.backgroundElement }]}>
-              <SafeAreaView style={{ flex: 1 }}>
+              <View style={{ flex: 1, paddingTop: Math.max(insets.top, 16) }}>
                 <View style={styles.mobileCloseContainer}>
                   <TouchableOpacity onPress={() => setMobileMenuOpen(false)}>
                     <Ionicons name="close" size={28} color={colors.text} />
                   </TouchableOpacity>
                 </View>
                 <SidebarContent />
-              </SafeAreaView>
+              </View>
             </View>
           </View>
         </Modal>

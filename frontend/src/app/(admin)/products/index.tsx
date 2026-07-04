@@ -246,10 +246,6 @@ export default function ProductListScreen() {
         </View>
       </View>
 
-      <TouchableOpacity onPress={downloadTemplate} style={styles.templateLink}>
-        <Text style={{ color: colors.primary, fontSize: 12, textDecorationLine: 'underline' }}>Download CSV Upload Template</Text>
-      </TouchableOpacity>
-
       {/* Table */}
       <View style={[styles.tableContainer, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
         <ScrollView horizontal showsHorizontalScrollIndicator={false}>

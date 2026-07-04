@@ -90,3 +90,15 @@ export const exportReports = asyncHandler(async (req, res) => {
     res.status(400).json({ message: 'Invalid format. Use ?format=csv or ?format=pdf' });
   }
 });
+
+// @desc    Export CSV Template
+// @route   GET /api/export/template
+// @access  Public
+export const exportTemplate = asyncHandler(async (req, res) => {
+  const header = 'Name,Category,Price,Stock,Description\n';
+  const row = '"Example Product","Diyas","299","50","Handcrafted beautiful Diya."';
+  
+  res.setHeader('Content-Disposition', 'attachment; filename=product_template.csv');
+  res.set('Content-Type', 'text/csv');
+  return res.status(200).send(header + row);
+});
