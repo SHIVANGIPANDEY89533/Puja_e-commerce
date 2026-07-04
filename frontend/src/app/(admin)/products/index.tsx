@@ -6,7 +6,7 @@ import { productService, Product } from '@/services/productService';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import * as DocumentPicker from 'expo-document-picker';
-import { exportToCSV, exportToExcel, exportToPDF, downloadTemplate, parseUploadedFile } from '@/utils/fileUtils';
+import { exportToCSV, exportToPDF, downloadTemplate, parseUploadedFile } from '@/utils/fileUtils';
 
 export default function ProductListScreen() {
   const { scheme } = useTheme();
@@ -67,7 +67,7 @@ export default function ProductListScreen() {
   const handleBulkUpload = async () => {
     try {
       const result = await DocumentPicker.getDocumentAsync({
-        type: ['text/csv', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'],
+        type: '*/*',
         copyToCacheDirectory: true,
       });
 
@@ -91,24 +91,12 @@ export default function ProductListScreen() {
     }
   };
 
-  // Export Logic
-  const handleExport = (format: 'csv' | 'excel' | 'pdf') => {
+  const handleExport = (format: 'csv' | 'pdf') => {
     setIsExporting(true);
     setShowExportMenu(false);
     try {
-      // Map properties cleanly for export
-      const exportData = filteredProducts.map(p => ({
-        ID: p._id,
-        Name: p.name,
-        Category: p.category,
-        Price: p.price,
-        Stock: p.stock,
-        Status: p.stock > 0 ? 'Active' : 'Out of Stock'
-      }));
-
-      if (format === 'csv') exportToCSV(exportData, 'products_export.csv');
-      if (format === 'excel') exportToExcel(exportData, 'products_export.xlsx');
-      if (format === 'pdf') exportToPDF(exportData, ['ID', 'Name', 'Category', 'Price', 'Stock', 'Status'], 'products_export.pdf');
+      if (format === 'csv') exportToCSV('products');
+      if (format === 'pdf') exportToPDF('products');
     } catch (err) {
       Alert.alert('Export Failed', 'An error occurred while exporting data.');
     } finally {
@@ -238,9 +226,6 @@ export default function ProductListScreen() {
               <View style={[styles.dropdownMenu, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
                 <TouchableOpacity style={styles.dropdownItem} onPress={() => handleExport('csv')}>
                   <Text style={{ color: colors.text }}>Export as CSV</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={styles.dropdownItem} onPress={() => handleExport('excel')}>
-                  <Text style={{ color: colors.text }}>Export as Excel</Text>
                 </TouchableOpacity>
                 <TouchableOpacity style={styles.dropdownItem} onPress={() => handleExport('pdf')}>
                   <Text style={{ color: colors.text }}>Export as PDF</Text>

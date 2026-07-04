@@ -7,6 +7,7 @@ import ProtectedRoute from '@/components/ProtectedRoute';
 import api from '@/services/api';
 import ReportsBarChart from '@/components/charts/ReportsBarChart';
 import { Dimensions, LogBox } from 'react-native';
+import { exportToCSV } from '@/utils/fileUtils';
 
 LogBox.ignoreLogs(['Unknown event handler property `onPressIn`']);
 
@@ -38,19 +39,7 @@ export default function ReportsScreen() {
 
   const handleExportCSV = () => {
     if (!data) return;
-    if (Platform.OS === 'web') {
-      const header = 'Date,Sales,Orders\n';
-      const rows = data.salesChartData.map((row: any) => `${row._id},${row.sales},${row.count}`).join('\n');
-      const csv = header + rows;
-      const blob = new Blob([csv], { type: 'text/csv' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `sales_report_${range}.csv`;
-      a.click();
-    } else {
-      alert('CSV Export is only supported on web right now.');
-    }
+    exportToCSV('reports', range);
   };
 
   const RangeButton = ({ label, value }: { label: string, value: string }) => (

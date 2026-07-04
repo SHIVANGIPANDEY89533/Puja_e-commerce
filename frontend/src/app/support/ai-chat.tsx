@@ -83,7 +83,8 @@ export default function AIChatScreen() {
     <ProtectedRoute>
       <KeyboardAvoidingView 
         style={[styles.container, { backgroundColor: colors.background }]} 
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 25}
       >
         <View style={[styles.header, { borderBottomColor: colors.border }]}>
           <TouchableOpacity onPress={() => router.back()} style={styles.backBtn}>

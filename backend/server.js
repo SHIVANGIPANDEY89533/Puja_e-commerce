@@ -20,6 +20,7 @@ import settingRoutes from './routes/settingRoutes.js';
 import reportRoutes from './routes/reportRoutes.js';
 import paymentRoutes from './routes/paymentRoutes.js';
 import addressRoutes from './routes/addressRoutes.js';
+import exportRoutes from './routes/exportRoutes.js';
 
 // Load env vars
 dotenv.config();
@@ -58,6 +59,7 @@ app.use('/api/settings', settingRoutes);
 app.use('/api/reports', reportRoutes);
 app.use('/api/payments', paymentRoutes);
 app.use('/api/addresses', addressRoutes);
+app.use('/api/export', exportRoutes);
 
 app.get('/api/config/razorpay', (req, res) => {
   res.send(process.env.RAZORPAY_KEY_ID || 'mock_key_id');

@@ -5,12 +5,15 @@ import User from '../models/User.js';
 const protect = async (req, res, next) => {
   let token;
 
-  if (
-    req.headers.authorization &&
-    req.headers.authorization.startsWith('Bearer')
-  ) {
+  if (req.headers.authorization && req.headers.authorization.startsWith('Bearer')) {
+    token = req.headers.authorization.split(' ')[1];
+  } else if (req.query && req.query.token) {
+    // Fallback for native browser downloads
+    token = req.query.token;
+  }
+
+  if (token) {
     try {
-      token = req.headers.authorization.split(' ')[1];
 
       if (!token) {
         return res.status(401).json({ message: 'Not authorized, token value is empty' });
@@ -31,9 +34,7 @@ const protect = async (req, res, next) => {
       console.error(error);
       return res.status(401).json({ message: 'Not authorized, token validation failed' });
     }
-  }
-
-  if (!token) {
+  } else {
     return res.status(401).json({ message: 'Not authorized, token missing' });
   }
 };

@@ -41,124 +41,56 @@ export const parseUploadedFile = async (uri: string, name: string, mimeType?: st
   });
 };
 
-import * as FileSystem from 'expo-file-system';
-import * as Sharing from 'expo-sharing';
-import * as Print from 'expo-print';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import * as Linking from 'expo-linking';
 
-const triggerDownload = async (blob: Blob, filename: string) => {
-  if (Platform.OS === 'web') {
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    document.body.appendChild(a);
-    a.click();
-    window.URL.revokeObjectURL(url);
-    document.body.removeChild(a);
-  } else {
-    try {
-      const fr = new FileReader();
-      fr.onload = async () => {
-        const base64 = (fr.result as string).split(',')[1];
-        // @ts-ignore
-        const fileUri = `${FileSystem.documentDirectory}${filename}`;
-        
-        await FileSystem.writeAsStringAsync(fileUri, base64, { 
-          encoding: FileSystem.EncodingType.Base64 
-        });
-        
-        if (await Sharing.isAvailableAsync()) {
-          await Sharing.shareAsync(fileUri);
-        } else {
-          Alert.alert("Error", "Sharing is not available on this device");
-        }
-      };
-      fr.readAsDataURL(blob);
-    } catch (err) {
-      console.error(err);
-      Alert.alert("Error", "Failed to save file on device.");
+// Ensure the correct base URL is used
+const getBaseUrl = () => {
+  const url = process.env.EXPO_PUBLIC_API_URL || 'https://puja-e-commerce.onrender.com/api';
+  return url;
+};
+
+const triggerBackendDownload = async (endpoint: string) => {
+  try {
+    const token = await AsyncStorage.getItem('token');
+    if (!token) {
+      Alert.alert('Error', 'You must be logged in to download.');
+      return;
     }
+    
+    // Check if endpoint already has a query string
+    const separator = endpoint.includes('?') ? '&' : '?';
+    const url = `${getBaseUrl()}${endpoint}${separator}token=${token}`;
+    
+    if (Platform.OS === 'web') {
+      window.open(url, '_blank');
+    } else {
+      Linking.openURL(url);
+    }
+  } catch (err) {
+    console.error(err);
+    Alert.alert('Error', 'Failed to initiate download.');
   }
 };
 
-export const exportToCSV = (data: any[], filename: string = 'export.csv') => {
-  const csv = Papa.unparse(data);
-  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-  triggerDownload(blob, filename);
+export const exportToCSV = (type: 'products' | 'reports', range?: string) => {
+  if (type === 'products') {
+    triggerBackendDownload('/export/products?format=csv');
+  } else if (type === 'reports') {
+    triggerBackendDownload(`/export/reports?format=csv&range=${range || 'all'}`);
+  }
 };
 
-export const exportToExcel = (data: any[], filename: string = 'export.xlsx') => {
-  const worksheet = XLSX.utils.json_to_sheet(data);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, 'Data');
-  
-  const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
-  const blob = new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
-  triggerDownload(blob, filename);
-};
-
-export const exportToPDF = async (data: any[], columns: string[], filename: string = 'export.pdf') => {
-  if (Platform.OS === 'web') {
-    try {
-      // @ts-ignore
-      const { jsPDF } = await import('jspdf/dist/jspdf.es.min.js');
-      const autoTable = (await import('jspdf-autotable')).default;
-      
-      const doc = new jsPDF();
-      
-      const tableData = data.map(row => columns.map(col => row[col] !== undefined ? String(row[col]) : ''));
-      
-      autoTable(doc, {
-        head: [columns],
-        body: tableData,
-        styles: { fontSize: 8 },
-        headStyles: { fillColor: [41, 128, 185] },
-      });
-
-      doc.save(filename);
-    } catch (err) {
-      console.error("Failed to generate PDF on web", err);
-    }
-  } else {
-    try {
-      // Generate HTML for the table for Mobile PDF generation
-      const thead = `<tr>${columns.map(col => `<th style="border: 1px solid #ddd; padding: 8px; background-color: #2980b9; color: white; text-transform: capitalize;">${col}</th>`).join('')}</tr>`;
-      const tbody = data.map(row => `<tr>${columns.map(col => `<td style="border: 1px solid #ddd; padding: 8px;">${row[col] !== undefined ? String(row[col]) : ''}</td>`).join('')}</tr>`).join('');
-      
-      const html = `
-        <html>
-          <head>
-            <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no" />
-            <style>
-              body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; padding: 20px; }
-              table { width: 100%; border-collapse: collapse; margin-top: 20px; }
-              h1 { color: #333; text-align: center; }
-            </style>
-          </head>
-          <body>
-            <h1>Report</h1>
-            <table>
-              <thead>${thead}</thead>
-              <tbody>${tbody}</tbody>
-            </table>
-          </body>
-        </html>
-      `;
-
-      const { uri } = await Print.printToFileAsync({ html });
-      if (await Sharing.isAvailableAsync()) {
-        await Sharing.shareAsync(uri, { UTI: '.pdf', mimeType: 'application/pdf' });
-      } else {
-        Alert.alert("Error", "Sharing is not available on this device");
-      }
-    } catch (err) {
-      console.error("Failed to generate PDF on mobile", err);
-      Alert.alert('Error', 'Failed to generate PDF on mobile.');
-    }
+export const exportToPDF = (type: 'products' | 'reports', range?: string) => {
+  if (type === 'products') {
+    triggerBackendDownload('/export/products?format=pdf');
+  } else if (type === 'reports') {
+    triggerBackendDownload(`/export/reports?format=pdf&range=${range || 'all'}`);
   }
 };
 
 export const downloadTemplate = () => {
+  // Use local generation for template since it's just static dummy data
   const template = [
     {
       name: 'Example Product',
@@ -168,5 +100,18 @@ export const downloadTemplate = () => {
       description: 'Handcrafted beautiful Diya.',
     }
   ];
-  exportToCSV(template, 'product_template.csv');
+  const csv = Papa.unparse(template);
+  if (Platform.OS === 'web') {
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'product_template.csv';
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  } else {
+    Alert.alert('Notice', 'Template download is only supported on web currently.');
+  }
 };
