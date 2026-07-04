@@ -137,6 +137,7 @@ export default function AdminLayout() {
     { name: 'Products', path: '/(admin)/products', icon: 'cube-outline' as const },
     { name: 'Categories', path: '/(admin)/categories', icon: 'grid-outline' as const },
     { name: 'Orders', path: '/(admin)/orders', icon: 'cart-outline' as const },
+    { name: 'Payments', path: '/(admin)/payments', icon: 'card-outline' as const },
     { name: 'Users', path: '/(admin)/users', icon: 'people-outline' as const },
     { name: 'Banners', path: '/(admin)/banners', icon: 'image-outline' as const },
     { name: 'Coupons', path: '/(admin)/coupons', icon: 'pricetag-outline' as const },

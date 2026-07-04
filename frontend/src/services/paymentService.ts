@@ -11,20 +11,28 @@ export const paymentService = {
     return response.data;
   },
 
-  verifyPayment: async (data: {
-    razorpayOrderId: string;
-    razorpayPaymentId: string;
-    razorpaySignature: string;
-    userName: string;
-    email: string;
-    phone: string;
-    address: string;
-    items: any[];
-    total: number;
-    paymentMethod: string;
-    discountAmount: number;
-  }): Promise<any> => {
+  verifyPayment: async (data: any) => {
     const response = await api.post('/payments/verify', data);
+    return response.data;
+  },
+
+  getAdminPayments: async () => {
+    const response = await api.get('/payments');
+    return response.data;
+  },
+
+  getAdminPaymentById: async (id: string) => {
+    const response = await api.get(`/payments/${id}`);
+    return response.data;
+  },
+
+  getPaymentStats: async () => {
+    const response = await api.get('/payments/stats');
+    return response.data;
+  },
+
+  updatePaymentStatus: async (id: string, data: { status: string; refundAmount?: number }) => {
+    const response = await api.put(`/payments/${id}`, data);
     return response.data;
   },
 

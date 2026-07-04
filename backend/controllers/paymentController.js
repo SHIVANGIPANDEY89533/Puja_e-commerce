@@ -1,6 +1,7 @@
 import asyncHandler from 'express-async-handler';
 import { createRazorpayOrder, verifyRazorpaySignature } from '../services/paymentService.js';
 import Order from '../models/Order.js';
+import Payment from '../models/Payment.js';
 import Product from '../models/Product.js';
 import Cart from '../models/Cart.js';
 import Coupon from '../models/Coupon.js';
@@ -78,51 +79,90 @@ const verifyPayment = asyncHandler(async (req, res) => {
     discountAmount 
   } = req.body;
 
+  let isSignatureValid = false;
+  let paymentGateway = 'Razorpay';
+  let paymentStatus = 'Success';
+
   // 1. Verify Razorpay Signature
   if (paymentMethod !== 'Cash on Delivery') {
-    const isValid = verifyRazorpaySignature(razorpayOrderId, razorpayPaymentId, razorpaySignature);
-    if (!isValid) {
-      res.status(400);
-      throw new Error('Invalid payment signature');
+    isSignatureValid = verifyRazorpaySignature(razorpayOrderId, razorpayPaymentId, razorpaySignature);
+    if (!isSignatureValid) {
+      paymentStatus = 'Failed';
+    }
+  } else {
+    paymentGateway = 'COD';
+    paymentStatus = 'Pending';
+  }
+
+  // Generate Transaction ID
+  const txnId = paymentMethod !== 'Cash on Delivery' ? razorpayPaymentId : `TXN_COD_${Date.now()}`;
+
+  // 2. Create Order (Only if payment is successful or COD)
+  let createdOrder = null;
+  if (paymentStatus === 'Success' || paymentStatus === 'Pending') {
+    const order = new Order({
+      userId: req.user._id,
+      userName,
+      email,
+      phone,
+      address,
+      items,
+      total,
+      paymentMethod,
+      paymentStatus: paymentMethod === 'Cash on Delivery' ? 'Pending' : 'Paid',
+      status: 'Placed',
+      razorpayOrderId: razorpayOrderId || null,
+      razorpayPaymentId: razorpayPaymentId || null,
+      transactionId: txnId,
+      paymentDate: paymentMethod !== 'Cash on Delivery' ? new Date() : null,
+      paymentAmount: total,
+      paymentCurrency: 'INR'
+    });
+
+    createdOrder = await order.save();
+
+    // 3. Reduce Product Stock
+    for (const item of items) {
+      const product = await Product.findById(item.id);
+      if (product) {
+        product.stock = Math.max(0, product.stock - item.qty);
+        await product.save();
+      }
+    }
+
+    // 4. Clear Customer Cart
+    let cart = await Cart.findOne({ user: req.user._id });
+    if (cart) {
+      cart.items = [];
+      await cart.save();
     }
   }
 
-  // 2. Create Order
-  const order = new Order({
+  // 5. Save Payment Record
+  const paymentRecord = new Payment({
+    transactionId: txnId,
+    orderId: createdOrder ? createdOrder._id : null,
     userId: req.user._id,
-    userName,
-    email,
-    phone,
-    address,
-    items,
-    total,
-    paymentMethod,
-    paymentStatus: paymentMethod === 'Cash on Delivery' ? 'Pending' : 'Paid',
-    status: 'Placed',
+    customerName: userName,
+    customerEmail: email,
+    customerPhone: phone,
     razorpayOrderId: razorpayOrderId || null,
     razorpayPaymentId: razorpayPaymentId || null,
-    transactionId: razorpayPaymentId || `COD_${Date.now()}`,
-    paymentDate: paymentMethod !== 'Cash on Delivery' ? new Date() : null,
-    paymentAmount: total,
-    paymentCurrency: 'INR'
+    razorpaySignature: razorpaySignature || null,
+    signatureVerified: isSignatureValid,
+    paymentGateway: paymentGateway,
+    paymentMethod: paymentMethod,
+    amount: total,
+    currency: 'INR',
+    paymentStatus: paymentStatus,
+    paidAt: paymentStatus === 'Success' ? new Date() : null,
   });
 
-  const createdOrder = await order.save();
+  await paymentRecord.save();
 
-  // 3. Reduce Product Stock
-  for (const item of items) {
-    const product = await Product.findById(item.id);
-    if (product) {
-      product.stock = Math.max(0, product.stock - item.qty);
-      await product.save();
-    }
-  }
-
-  // 4. Clear Customer Cart
-  let cart = await Cart.findOne({ user: req.user._id });
-  if (cart) {
-    cart.items = [];
-    await cart.save();
+  if (paymentStatus === 'Failed') {
+    res.status(400);
+    throw new Error('Invalid payment signature');
   }
 
   // 5. Generate Notifications
@@ -139,19 +179,117 @@ const verifyPayment = asyncHandler(async (req, res) => {
 
 // @desc    Get Payment Details
 // @route   GET /api/payments/:id
-// @access  Private
-const getPaymentDetails = asyncHandler(async (req, res) => {
-  const order = await Order.findOne({ razorpayPaymentId: req.params.id });
-  if (order) {
-    res.json(order);
+// @access  Private/Admin
+const getPaymentById = asyncHandler(async (req, res) => {
+  const payment = await Payment.findById(req.params.id).populate('orderId', 'status total');
+  if (payment) {
+    res.json(payment);
   } else {
     res.status(404);
     throw new Error('Payment not found');
   }
 });
 
+// @desc    Get all payments
+// @route   GET /api/payments
+// @access  Private/Admin
+const getAllPayments = asyncHandler(async (req, res) => {
+  const payments = await Payment.find({}).sort({ createdAt: -1 });
+  res.json(payments);
+});
+
+// @desc    Update Payment Status
+// @route   PUT /api/payments/:id/status
+// @access  Private/Admin
+const updatePaymentStatus = asyncHandler(async (req, res) => {
+  const { status, refundAmount } = req.body;
+
+  const payment = await Payment.findById(req.params.id);
+
+  if (payment) {
+    payment.paymentStatus = status || payment.paymentStatus;
+    
+    if (status === 'Refunded' && refundAmount) {
+      payment.refundStatus = 'Processed';
+      payment.refundAmount = refundAmount;
+    }
+    
+    if (status === 'Collected' || status === 'Success') {
+      payment.paidAt = new Date();
+    }
+
+    const updatedPayment = await payment.save();
+
+    // Optionally update the associated order
+    if (payment.orderId) {
+      const order = await Order.findById(payment.orderId);
+      if (order) {
+        if (status === 'Success' || status === 'Collected') {
+          order.paymentStatus = 'Paid';
+        } else if (status === 'Refunded') {
+          order.paymentStatus = 'Refunded';
+        }
+        await order.save();
+      }
+    }
+
+    res.json(updatedPayment);
+  } else {
+    res.status(404);
+    throw new Error('Payment not found');
+  }
+});
+
+// @desc    Get Payment Statistics
+// @route   GET /api/payments/stats
+// @access  Private/Admin
+const getPaymentStats = asyncHandler(async (req, res) => {
+  const totalRevenue = await Payment.aggregate([
+    { $match: { paymentStatus: { $in: ['Success', 'Collected'] } } },
+    { $group: { _id: null, total: { $sum: '$amount' } } }
+  ]);
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  const todayRevenue = await Payment.aggregate([
+    { $match: { paymentStatus: { $in: ['Success', 'Collected'] }, createdAt: { $gte: today } } },
+    { $group: { _id: null, total: { $sum: '$amount' } } }
+  ]);
+
+  const statusCounts = await Payment.aggregate([
+    { $group: { _id: '$paymentStatus', count: { $sum: 1 } } }
+  ]);
+
+  const totalTransactions = await Payment.countDocuments();
+
+  const stats = {
+    totalRevenue: totalRevenue.length > 0 ? totalRevenue[0].total : 0,
+    todayRevenue: todayRevenue.length > 0 ? todayRevenue[0].total : 0,
+    totalTransactions,
+    successful: 0,
+    pending: 0,
+    failed: 0,
+    refunded: 0,
+    collected: 0,
+  };
+
+  statusCounts.forEach(stat => {
+    if (stat._id === 'Success') stats.successful = stat.count;
+    if (stat._id === 'Pending') stats.pending = stat.count;
+    if (stat._id === 'Failed') stats.failed = stat.count;
+    if (stat._id === 'Refunded') stats.refunded = stat.count;
+    if (stat._id === 'Collected') stats.collected = stat.count;
+  });
+
+  res.json(stats);
+});
+
 export {
   createPaymentOrder,
   verifyPayment,
-  getPaymentDetails
+  getPaymentById,
+  getAllPayments,
+  updatePaymentStatus,
+  getPaymentStats
 };
