@@ -1,5 +1,5 @@
-import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Dimensions } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Platform, Dimensions, ActivityIndicator } from 'react-native';
 import { useTheme } from '@/context/ThemeContext';
 import { Colors } from '@/constants/theme';
 import { useAuth } from '@/context/AuthContext';
@@ -7,6 +7,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, Link } from 'expo-router';
 import DashboardLineChart from '@/components/charts/DashboardLineChart';
 import { LogBox } from 'react-native';
+import { reportService } from '@/services/reportService';
+import { orderService } from '@/services/orderService';
 
 LogBox.ignoreLogs(['Unknown event handler property `onPressIn`']);
 
@@ -24,11 +26,35 @@ export default function AdminDashboard() {
     return parts.length > 1 ? `${parts[0][0]}${parts[1][0]}`.toUpperCase() : name[0].toUpperCase();
   };
 
+  const [stats, setStats] = useState<any>(null);
+  const [latestOrders, setLatestOrders] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchDashboardData();
+  }, []);
+
+  const fetchDashboardData = async () => {
+    try {
+      setLoading(true);
+      const [analyticsData, ordersData] = await Promise.all([
+        reportService.getAnalytics('all'),
+        orderService.getOrders()
+      ]);
+      setStats(analyticsData.summary);
+      setLatestOrders(ordersData.slice(0, 5));
+    } catch (error) {
+      console.error('Failed to fetch dashboard data', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const statCards = [
-    { id: '1', title: 'Total Revenue', value: '₹4,52,000', icon: 'wallet', color: '#27AE60', bg: '#27AE60' + '15' },
-    { id: '2', title: 'Total Orders', value: '1,248', icon: 'cart', color: '#2980B9', bg: '#2980B9' + '15' },
-    { id: '3', title: 'Active Users', value: '8,402', icon: 'people', color: '#8E44AD', bg: '#8E44AD' + '15' },
-    { id: '4', title: 'Products', value: '342', icon: 'cube', color: '#E67E22', bg: '#E67E22' + '15' },
+    { id: '1', title: 'Total Revenue', value: stats ? `₹${stats.totalRevenue.toLocaleString()}` : '...', icon: 'wallet', color: '#27AE60', bg: '#27AE60' + '15' },
+    { id: '2', title: 'Total Orders', value: stats ? stats.totalOrders : '...', icon: 'cart', color: '#2980B9', bg: '#2980B9' + '15' },
+    { id: '3', title: 'Active Users', value: stats ? stats.totalCustomers : '...', icon: 'people', color: '#8E44AD', bg: '#8E44AD' + '15' },
+    { id: '4', title: 'Products', value: stats ? stats.totalProducts : '...', icon: 'cube', color: '#E67E22', bg: '#E67E22' + '15' },
   ];
 
   const quickActions = [
@@ -57,6 +83,11 @@ export default function AdminDashboard() {
         <View style={[styles.headerDivider, { backgroundColor: colors.border }]} />
       </View>
 
+      {loading ? (
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <ActivityIndicator size="large" color={colors.primary} />
+        </View>
+      ) : (
       <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
         
         {/* Statistics Grid */}
@@ -94,30 +125,39 @@ export default function AdminDashboard() {
           ))}
         </View>
 
-        {/* Recent Activity Placeholder */}
+        {/* Recent Activity */}
         <Text style={[styles.sectionTitle, { color: colors.text, marginTop: 32 }]}>Recent Activity</Text>
         <View style={[styles.activityCard, { backgroundColor: colors.backgroundElement, borderColor: colors.border }]}>
           <View style={styles.activityHeader}>
             <Text style={[styles.activityTitle, { color: colors.text }]}>Latest Orders</Text>
-            <TouchableOpacity>
-              <Text style={{ color: colors.primary, fontSize: 13, fontWeight: '600' }}>View All</Text>
-            </TouchableOpacity>
+            <Link href="/(admin)/orders" asChild>
+              <TouchableOpacity>
+                <Text style={{ color: colors.primary, fontSize: 13, fontWeight: '600' }}>View All</Text>
+              </TouchableOpacity>
+            </Link>
           </View>
-          {[1, 2, 3].map((item, idx) => (
-            <View key={item} style={[styles.activityItem, { borderBottomColor: colors.border, borderBottomWidth: idx === 2 ? 0 : 1 }]}>
+          {latestOrders.length > 0 ? latestOrders.map((order: any, idx: number) => (
+            <View key={order._id} style={[styles.activityItem, { borderBottomColor: colors.border, borderBottomWidth: idx === latestOrders.length - 1 ? 0 : 1 }]}>
               <View style={[styles.activityIcon, { backgroundColor: colors.primary + '15' }]}>
                 <Ionicons name="cart-outline" size={18} color={colors.primary} />
               </View>
               <View style={styles.activityInfo}>
-                <Text style={[styles.activityName, { color: colors.text }]}>Order #ORD-{Math.floor(Math.random() * 9000) + 1000}</Text>
-                <Text style={[styles.activityTime, { color: colors.textSecondary }]}>{idx * 15 + 5} mins ago</Text>
+                <Text style={[styles.activityName, { color: colors.text }]}>
+                  {order.userName} - #{order._id.substring(order._id.length - 6).toUpperCase()}
+                </Text>
+                <Text style={[styles.activityTime, { color: colors.textSecondary }]}>
+                  {new Date(order.createdAt).toLocaleDateString()}
+                </Text>
               </View>
-              <Text style={[styles.activityAmount, { color: colors.text }]}>₹{(Math.random() * 5000 + 500).toFixed(0)}</Text>
+              <Text style={[styles.activityAmount, { color: colors.text }]}>₹{order.total}</Text>
             </View>
-          ))}
+          )) : (
+            <Text style={{ color: colors.textSecondary, textAlign: 'center', padding: 20 }}>No orders found.</Text>
+          )}
         </View>
 
       </ScrollView>
+      )}
     </View>
   );
 }
